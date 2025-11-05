@@ -18,7 +18,7 @@ class CaesarCipherTestCase(unittest.TestCase):
         """Проверка шифрования с дефолтным сдвигом (3)."""
         self.assertEqual(encrypt_caesar("PYTHON"), "SBWKRQ")
         self.assertEqual(encrypt_caesar("python"), "sbwkrq")
-        self.assertEqual(encrypt_caesar("Python3.6"), "Sbwkrq3.6")
+        self.assertEqual(encrypt_caesar("Python 3.9.13"), "Sbwkrq 3.9.13")
         self.assertEqual(encrypt_caesar(""), "")
 
     def test_encrypt_various_shifts(self):
@@ -51,8 +51,8 @@ class CaesarCipherTestCase(unittest.TestCase):
         messages = [
             "HELLO",
             "hello",
-            "Python3.6",
-            "The quick brown fox jumps over the lazy dog",
+            "Python 3.9.13",
+            "We are responsible for those who have tamed",
             "",
             "1234567890!@#$%^&*()",
         ]
