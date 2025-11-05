@@ -18,13 +18,13 @@ class TestVigenere:
         """Проверяет базовые примеры шифрования из докстринга."""
         assert encrypt_vigenere("PYTHON", "A") == "PYTHON"
         assert encrypt_vigenere("python", "a") == "python"
-        assert encrypt_vigenere("ATTACKATDAWN", "LEMON") == "LXFOPVEFRNHR"
+        assert encrypt_vigenere("LABORATORYWORK", "LEMON") == "WENCELXAFLHSDY"
 
     def test_decrypt_basic(self):
         """Проверяет базовые примеры расшифровки из докстринга."""
         assert decrypt_vigenere("PYTHON", "A") == "PYTHON"
         assert decrypt_vigenere("python", "a") == "python"
-        assert decrypt_vigenere("LXFOPVEFRNHR", "LEMON") == "ATTACKATDAWN"
+        assert decrypt_vigenere("WENCELXAFLHSDY", "LEMON") == "LABORATORYWORK"
 
     def test_encrypt_with_nonalpha(self):
         """Проверяет, что символы вне диапазона букв не меняются."""
@@ -52,8 +52,8 @@ class TestVigenere:
         messages = [
             "HELLO",
             "hello",
-            "Python3.10",
-            "The quick brown fox jumps over the lazy dog!",
+            "Python 3.9.13",
+            "We are responsible for those who have tamed!",
             "",
         ]
         keywords = ["A", "key", "LEMON", "ABC", "xyz"]

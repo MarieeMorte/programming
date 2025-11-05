@@ -52,7 +52,7 @@ class CaesarCipherTestCase(unittest.TestCase):
             "HELLO",
             "hello",
             "Python 3.9.13",
-            "We are responsible for those who have tamed",
+            "We are responsible for those who have tamed!",
             "",
             "1234567890!@#$%^&*()",
         ]
