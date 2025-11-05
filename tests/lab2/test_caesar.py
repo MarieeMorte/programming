@@ -36,7 +36,7 @@ class CaesarCipherTestCase(unittest.TestCase):
         """Проверка расшифровки с дефолтным сдвигом (3)."""
         self.assertEqual(decrypt_caesar("SBWKRQ"), "PYTHON")
         self.assertEqual(decrypt_caesar("sbwkrq"), "python")
-        self.assertEqual(decrypt_caesar("Sbwkrq3.6"), "Python3.6")
+        self.assertEqual(decrypt_caesar("Sbwkrq 3.9.13"), "Python 3.9.13")
         self.assertEqual(decrypt_caesar(""), "")
 
     def test_decrypt_various_shifts(self):
