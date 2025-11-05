@@ -1,8 +1,14 @@
+"""RSA encryption and decryption module.
+
+This module provides simplified implementations of RSA key generation,
+encryption, and decryption, along with helper functions.
+"""
+
 import random
 import typing as tp
 
 
-def is_prime(n: int) -> bool:
+def is_prime(number: int) -> bool:
     """
     Tests to see if a number is prime.
     >>> is_prime(2)
@@ -12,19 +18,19 @@ def is_prime(n: int) -> bool:
     >>> is_prime(8)
     False
     """
-    if n <= 1:
+    if number <= 1:
         return False
-    if n == 2:
+    if number == 2:
         return True
-    if n % 2 == 0:
+    if number % 2 == 0:
         return False
-    for i in range(3, int(n ** 0.5) + 1, 2):
-        if n % i == 0:
+    for divisor in range(3, int(number**0.5) + 1, 2):
+        if number % divisor == 0:
             return False
     return True
 
 
-def gcd(a: int, b: int) -> int:
+def gcd(first: int, second: int) -> int:
     """
     Euclid's algorithm for determining the greatest common divisor.
     >>> gcd(12, 15)
@@ -32,27 +38,30 @@ def gcd(a: int, b: int) -> int:
     >>> gcd(3, 7)
     1
     """
-    while b != 0:
-        a, b = b, a % b
-    return a
+    while second != 0:
+        first, second = second, first % second
+    return first
 
 
-def multiplicative_inverse(e: int, phi: int) -> int:
+def multiplicative_inverse(e_value: int, phi_value: int) -> int:
     """
     Euclid's extended algorithm for finding the multiplicative
     inverse of two numbers.
     >>> multiplicative_inverse(7, 40)
     23
     """
-    original_phi = phi
-    x0, x1 = 0, 1
-    while e > 1:
-        q = e // phi
-        e, phi = phi, e % phi
-        x0, x1 = x1 - q * x0, x0
-    if x1 < 0:
-        x1 += original_phi
-    return x1
+    original_phi = phi_value
+    x_prev, x_curr = 0, 1
+
+    while e_value > 1:
+        quotient = e_value // phi_value
+        e_value, phi_value = phi_value, e_value % phi_value
+        x_prev, x_curr = x_curr - quotient * x_prev, x_prev
+
+    if x_curr < 0:
+        x_curr += original_phi
+
+    return x_curr
 
 
 def generate_keypair(p: int, q: int) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:
@@ -98,7 +107,7 @@ def decrypt(pk: tp.Tuple[int, int], ciphertext: tp.List[int]) -> str:
     # Unpack the key into its components
     key, n = pk
     # Generate the plaintext based on the ciphertext and key using a^b mod m
-    plain = [chr((char ** key) % n) for char in ciphertext]
+    plain = [chr((char**key) % n) for char in ciphertext]
     # Return the array of bytes as a string
     return "".join(plain)
 
