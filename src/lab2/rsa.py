@@ -64,7 +64,9 @@ def multiplicative_inverse(e_value: int, phi_value: int) -> int:
     return x_curr
 
 
-def generate_keypair(p: int, q: int) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:  # pylint: disable=redefined-outer-name
+def generate_keypair(
+    p: int, q: int
+) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:  # pylint: disable=redefined-outer-name
     """Generate RSA public/private keypair from two primes p and q."""
     if not (is_prime(p) and is_prime(q)):
         raise ValueError("Both numbers must be prime.")
