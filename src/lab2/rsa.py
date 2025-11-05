@@ -64,33 +64,34 @@ def multiplicative_inverse(e_value: int, phi_value: int) -> int:
     return x_curr
 
 
-def generate_keypair(p: int, q: int) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:
+def generate_keypair(p: int, q: int) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:  # pylint: disable=redefined-outer-name
+    """Generate RSA public/private keypair from two primes p and q."""
     if not (is_prime(p) and is_prime(q)):
         raise ValueError("Both numbers must be prime.")
-    elif p == q:
+    if p == q:
         raise ValueError("p and q cannot be equal")
 
     # n = p * q
-    n = p * q
+    n_val = p * q
 
     # phi = (p - 1) * (q - 1)
-    phi = (p - 1) * (q - 1)
+    phi_val = (p - 1) * (q - 1)
 
     # Choose an integer e such that e and phi(n) are coprime
-    e = random.randrange(1, phi)
+    e_val = random.randrange(1, phi_val)
 
     # Use Euclid's Algorithm to verify that e and phi(n) are coprime
-    g = gcd(e, phi)
-    while g != 1:
-        e = random.randrange(1, phi)
-        g = gcd(e, phi)
+    g_val = gcd(e_val, phi_val)
+    while g_val != 1:
+        e_val = random.randrange(1, phi_val)
+        g_val = gcd(e_val, phi_val)
 
     # Use Extended Euclid's Algorithm to generate the private key
-    d = multiplicative_inverse(e, phi)
+    d_val = multiplicative_inverse(e_val, phi_val)
 
     # Return public and private keypair
     # Public key is (e, n) and private key is (d, n)
-    return (e, n), (d, n)
+    return (e_val, n_val), (d_val, n_val)
 
 
 def encrypt(pk: tp.Tuple[int, int], plaintext: str) -> tp.List[int]:
