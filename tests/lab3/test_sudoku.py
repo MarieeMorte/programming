@@ -8,14 +8,29 @@ from src.lab3.sudoku import group, get_row, get_col, get_block, find_empty_posit
 class SudokuTestCase(unittest.TestCase):
     def test_group(self):
         """Проверка группировки значений в матрицу."""
+        # Основные случаи
         self.assertEqual(group([1, 2, 3, 4], 2), [[1, 2], [3, 4]])
         self.assertEqual(group([1, 2, 3, 4, 5, 6, 7, 8, 9], 3),
                          [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+        # Разные типы данных
         self.assertEqual(group(['a', 'b', 'c', 'd'], 2),
                          [['a', 'b'], ['c', 'd']])
-        self.assertEqual(group([1, 2, 3, 4, 5, 6], 3),
-                         [[1, 2, 3], [4, 5, 6]])
+
+        # Граничные случаи
         self.assertEqual(group([], 3), [])
+        self.assertEqual(group([1], 1), [[1]])
+        self.assertEqual(group([1], 5), [[1]])
+
+        # Случаи с остатком
+        self.assertEqual(group([1, 2, 3, 4, 5], 2),
+                         [[1, 2], [3, 4], [5]])
+        self.assertEqual(group([1, 2, 3, 4, 5, 6, 7], 3),
+                         [[1, 2, 3], [4, 5, 6], [7]])
+
+        # Крайние значения n
+        self.assertEqual(group([1, 2, 3], 1), [[1], [2], [3]])
+        self.assertEqual(group([1, 2, 3], 3), [[1, 2, 3]])
 
     def test_get_row(self):
         """Проверка получения строки."""
