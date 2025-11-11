@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.lab3.sudoku import group, get_row, get_col, get_block, find_empty_positions, find_possible_values
+from src.lab3.sudoku import find_empty_positions, find_possible_values, get_block, get_col, get_row, group
 
 
 class SudokuTestCase(unittest.TestCase):
@@ -10,12 +10,10 @@ class SudokuTestCase(unittest.TestCase):
         """Проверка группировки значений в матрицу."""
         # Основные случаи
         self.assertEqual(group([1, 2, 3, 4], 2), [[1, 2], [3, 4]])
-        self.assertEqual(group([1, 2, 3, 4, 5, 6, 7, 8, 9], 3),
-                         [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        self.assertEqual(group([1, 2, 3, 4, 5, 6, 7, 8, 9], 3), [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
         # Разные типы данных
-        self.assertEqual(group(['a', 'b', 'c', 'd'], 2),
-                         [['a', 'b'], ['c', 'd']])
+        self.assertEqual(group(["a", "b", "c", "d"], 2), [["a", "b"], ["c", "d"]])
 
         # Граничные случаи
         self.assertEqual(group([], 3), [])
@@ -23,10 +21,8 @@ class SudokuTestCase(unittest.TestCase):
         self.assertEqual(group([1], 5), [[1]])
 
         # Случаи с остатком
-        self.assertEqual(group([1, 2, 3, 4, 5], 2),
-                         [[1, 2], [3, 4], [5]])
-        self.assertEqual(group([1, 2, 3, 4, 5, 6, 7], 3),
-                         [[1, 2, 3], [4, 5, 6], [7]])
+        self.assertEqual(group([1, 2, 3, 4, 5], 2), [[1, 2], [3, 4], [5]])
+        self.assertEqual(group([1, 2, 3, 4, 5, 6, 7], 3), [[1, 2, 3], [4, 5, 6], [7]])
 
         # Крайние значения n
         self.assertEqual(group([1, 2, 3], 1), [[1], [2], [3]])
@@ -34,124 +30,157 @@ class SudokuTestCase(unittest.TestCase):
 
     def test_get_row(self):
         """Проверка получения строки."""
-        grid = [
-            ['1', '2', '.'],
-            ['4', '.', '6'],
-            ['7', '8', '9']
-        ]
+        grid = [["1", "2", "."], ["4", ".", "6"], ["7", "8", "9"]]
 
-        self.assertEqual(get_row(grid, (0, 0)), ['1', '2', '.'])
-        self.assertEqual(get_row(grid, (0, 1)), ['1', '2', '.'])
-        self.assertEqual(get_row(grid, (0, 2)), ['1', '2', '.'])
-        self.assertEqual(get_row(grid, (1, 0)), ['4', '.', '6'])
-        self.assertEqual(get_row(grid, (1, 1)), ['4', '.', '6'])
-        self.assertEqual(get_row(grid, (1, 2)), ['4', '.', '6'])
-        self.assertEqual(get_row(grid, (2, 0)), ['7', '8', '9'])
-        self.assertEqual(get_row(grid, (2, 1)), ['7', '8', '9'])
-        self.assertEqual(get_row(grid, (2, 2)), ['7', '8', '9'])
+        self.assertEqual(get_row(grid, (0, 0)), ["1", "2", "."])
+        self.assertEqual(get_row(grid, (0, 1)), ["1", "2", "."])
+        self.assertEqual(get_row(grid, (0, 2)), ["1", "2", "."])
+        self.assertEqual(get_row(grid, (1, 0)), ["4", ".", "6"])
+        self.assertEqual(get_row(grid, (1, 1)), ["4", ".", "6"])
+        self.assertEqual(get_row(grid, (1, 2)), ["4", ".", "6"])
+        self.assertEqual(get_row(grid, (2, 0)), ["7", "8", "9"])
+        self.assertEqual(get_row(grid, (2, 1)), ["7", "8", "9"])
+        self.assertEqual(get_row(grid, (2, 2)), ["7", "8", "9"])
 
     def test_get_col(self):
         """Проверка получения столбца."""
-        grid = [
-            ['1', '2', '.'],
-            ['4', '.', '6'],
-            ['7', '8', '9']
-        ]
+        grid = [["1", "2", "."], ["4", ".", "6"], ["7", "8", "9"]]
 
-        self.assertEqual(get_col(grid, (0, 0)), ['1', '4', '7'])
-        self.assertEqual(get_col(grid, (0, 1)), ['2', '.', '8'])
-        self.assertEqual(get_col(grid, (0, 2)), ['.', '6', '9'])
-        self.assertEqual(get_col(grid, (1, 0)), ['1', '4', '7'])
-        self.assertEqual(get_col(grid, (1, 1)), ['2', '.', '8'])
-        self.assertEqual(get_col(grid, (1, 2)), ['.', '6', '9'])
-        self.assertEqual(get_col(grid, (2, 0)), ['1', '4', '7'])
-        self.assertEqual(get_col(grid, (2, 1)), ['2', '.', '8'])
-        self.assertEqual(get_col(grid, (2, 2)), ['.', '6', '9'])
+        self.assertEqual(get_col(grid, (0, 0)), ["1", "4", "7"])
+        self.assertEqual(get_col(grid, (0, 1)), ["2", ".", "8"])
+        self.assertEqual(get_col(grid, (0, 2)), [".", "6", "9"])
+        self.assertEqual(get_col(grid, (1, 0)), ["1", "4", "7"])
+        self.assertEqual(get_col(grid, (1, 1)), ["2", ".", "8"])
+        self.assertEqual(get_col(grid, (1, 2)), [".", "6", "9"])
+        self.assertEqual(get_col(grid, (2, 0)), ["1", "4", "7"])
+        self.assertEqual(get_col(grid, (2, 1)), ["2", ".", "8"])
+        self.assertEqual(get_col(grid, (2, 2)), [".", "6", "9"])
 
     def test_get_block(self):
         """Проверка получения блока."""
         # Тест на маленькой сетке 6 x 6
         grid = [
-            ['1', '2', '3', '.', '.', '.'],
-            ['4', '5', '6', '.', '.', '.'],
-            ['7', '8', '9', '.', '.', '.'],
-            ['.', '.', '.', '.', '.', '.'],
-            ['.', '.', '.', '.', '.', '.'],
-            ['.', '.', '.', '.', '.', '.']
+            ["1", "2", "3", ".", ".", "."],
+            ["4", "5", "6", ".", ".", "."],
+            ["7", "8", "9", ".", ".", "."],
+            [".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", "."],
         ]
 
-        self.assertEqual(get_block(grid, (0, 0)), ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
-        self.assertEqual(get_block(grid, (1, 1)), ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
+        self.assertEqual(get_block(grid, (0, 0)), ["1", "2", "3", "4", "5", "6", "7", "8", "9"])
+        self.assertEqual(get_block(grid, (1, 1)), ["1", "2", "3", "4", "5", "6", "7", "8", "9"])
 
         # Тест на полной сетке 9x9
         full_grid = [
-            ['5', '3', '.', '.', '7', '.', '.', '.', '.'],
-            ['6', '.', '.', '1', '9', '5', '.', '.', '.'],
-            ['.', '9', '8', '.', '.', '.', '.', '6', '.'],
-            ['8', '.', '.', '.', '6', '.', '.', '.', '3'],
-            ['4', '.', '.', '8', '.', '3', '.', '.', '1'],
-            ['7', '.', '.', '.', '2', '.', '.', '.', '6'],
-            ['.', '6', '.', '.', '.', '.', '2', '8', '.'],
-            ['.', '.', '.', '4', '1', '9', '.', '.', '5'],
-            ['.', '.', '.', '.', '8', '.', '.', '7', '9']
+            ["5", "3", ".", ".", "7", ".", ".", ".", "."],
+            ["6", ".", ".", "1", "9", "5", ".", ".", "."],
+            [".", "9", "8", ".", ".", ".", ".", "6", "."],
+            ["8", ".", ".", ".", "6", ".", ".", ".", "3"],
+            ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
+            ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
+            [".", "6", ".", ".", ".", ".", "2", "8", "."],
+            [".", ".", ".", "4", "1", "9", ".", ".", "5"],
+            [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         ]
 
-        self.assertEqual(get_block(full_grid, (0, 0)), ['5', '3', '.', '6', '.', '.', '.', '9', '8'])
-        self.assertEqual(get_block(full_grid, (4, 4)), ['.', '6', '.', '8', '.', '3', '.', '2', '.'])
-        self.assertEqual(get_block(full_grid, (8, 8)), ['2', '8', '.', '.', '.', '5', '.', '7', '9'])
+        self.assertEqual(get_block(full_grid, (0, 0)), ["5", "3", ".", "6", ".", ".", ".", "9", "8"])
+        self.assertEqual(get_block(full_grid, (4, 4)), [".", "6", ".", "8", ".", "3", ".", "2", "."])
+        self.assertEqual(get_block(full_grid, (8, 8)), ["2", "8", ".", ".", ".", "5", ".", "7", "9"])
 
         self.assertEqual(get_block(full_grid, (0, 0)), get_block(full_grid, (1, 1)))
         self.assertEqual(get_block(full_grid, (3, 3)), get_block(full_grid, (4, 4)))
 
     def test_find_empty_positions(self):
         """Проверка поиска пустых позиций."""
-        grid1 = [
-            ['1', '2', '.'],
-            ['4', '5', '6'],
-            ['7', '8', '9']
-        ]
+        # Основные случаи с разным расположением пустых клеток
+        grid1 = [["1", "2", "."], ["4", "5", "6"], ["7", "8", "9"]]
         self.assertEqual(find_empty_positions(grid1), (0, 2))
 
-        grid2 = [
-            ['1', '2', '3'],
-            ['4', '.', '6'],
-            ['7', '8', '9']
-        ]
+        grid2 = [["1", "2", "3"], ["4", ".", "6"], ["7", "8", "9"]]
         self.assertEqual(find_empty_positions(grid2), (1, 1))
 
-        grid3 = [
-            ['1', '2', '3'],
-            ['4', '5', '6'],
-            ['.', '8', '9']
-        ]
+        grid3 = [["1", "2", "3"], ["4", "5", "6"], [".", "8", "9"]]
         self.assertEqual(find_empty_positions(grid3), (2, 0))
 
-        grid4 = [
-            ['1', '2', '3'],
-            ['4', '5', '6'],
-            ['7', '8', '9']
-        ]
+        # Полностью заполненная сетка
+        grid4 = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]
         self.assertIsNone(find_empty_positions(grid4))
+
+        # Пустая сетка
+        grid5 = [[".", ".", "."], [".", ".", "."], [".", ".", "."]]
+        self.assertEqual(find_empty_positions(grid5), (0, 0))
+
+        # Несколько пустых клеток
+        grid6 = [["1", ".", "3"], [".", "5", "6"], ["7", "8", "."]]
+        self.assertEqual(find_empty_positions(grid6), (0, 1))
 
     def test_find_possible_values(self):
         """Проверка поиска возможных значений."""
+        # Полная сетка 9x9 с заполненным первым блоком
         grid = [
-            ['1', '2', '.'],
-            ['.', '5', '6'],
-            ['7', '8', '9']
+            ["1", "2", ".", ".", ".", ".", ".", ".", "."],
+            [".", "5", "6", ".", ".", ".", ".", ".", "."],
+            ["7", "8", "9", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
         ]
 
         possible = find_possible_values(grid, (0, 2))
-        self.assertEqual(possible, {'3', '4'})
+        self.assertEqual(possible, {"3", "4"})
 
         possible = find_possible_values(grid, (1, 0))
-        self.assertEqual(possible, {'3', '4'})
+        self.assertEqual(possible, {"3", "4"})
 
+        # Полная сетка 9x9 из puzzle1
         grid = [
-            ['5', '3', '.', '.', '7', '.', '.', '.', '.'],
-            ['6', '.', '.', '1', '9', '5', '.', '.', '.'],
-            ['.', '9', '8', '.', '.', '.', '.', '6', '.']
+            ["5", "3", ".", ".", "7", ".", ".", ".", "."],
+            ["6", ".", ".", "1", "9", "5", ".", ".", "."],
+            [".", "9", "8", ".", ".", ".", ".", "6", "."],
+            ["8", ".", ".", ".", "6", ".", ".", ".", "3"],
+            ["4", ".", ".", "8", ".", "3", ".", ".", "1"],
+            ["7", ".", ".", ".", "2", ".", ".", ".", "6"],
+            [".", "6", ".", ".", ".", ".", "2", "8", "."],
+            [".", ".", ".", "4", "1", "9", ".", ".", "5"],
+            [".", ".", ".", ".", "8", ".", ".", "7", "9"],
         ]
 
         possible = find_possible_values(grid, (0, 2))
-        self.assertEqual(possible, {'1', '2', '4'})
+        self.assertEqual(possible, {"1", "2", "4"})
+
+        possible = find_possible_values(grid, (0, 0))
+        self.assertEqual(possible, set())
+
+        # Полная сетка 9x9 с ограничениями
+        grid = [
+            ["1", "2", "3", ".", ".", ".", ".", ".", "."],
+            ["4", "5", "6", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+        ]
+        possible = find_possible_values(grid, (2, 0))
+        self.assertEqual(possible, {"7", "8", "9"})  # Исправлено: возможны 7, 8, 9
+
+        # Полностью пустая сетка 9x9
+        empty_grid = [
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+            [".", ".", ".", ".", ".", ".", ".", ".", "."],
+        ]
+        possible = find_possible_values(empty_grid, (0, 0))
+        self.assertEqual(possible, {"1", "2", "3", "4", "5", "6", "7", "8", "9"})
