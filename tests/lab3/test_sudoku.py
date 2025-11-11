@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.lab3.sudoku import group, get_row, get_col, get_block
+from src.lab3.sudoku import group, get_row, get_col, get_block, find_empty_positions, find_possible_values
 
 
 class SudokuTestCase(unittest.TestCase):
@@ -51,4 +51,57 @@ class SudokuTestCase(unittest.TestCase):
         ]
         self.assertEqual(get_block(grid, (0, 0)), ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
         self.assertEqual(get_block(grid, (1, 1)), ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
+
+    def test_find_empty_positions(self):
+        """Проверка поиска пустых позиций."""
+        grid1 = [
+            ['1', '2', '.'],
+            ['4', '5', '6'],
+            ['7', '8', '9']
+        ]
+        self.assertEqual(find_empty_positions(grid1), (0, 2))
+
+        grid2 = [
+            ['1', '2', '3'],
+            ['4', '.', '6'],
+            ['7', '8', '9']
+        ]
+        self.assertEqual(find_empty_positions(grid2), (1, 1))
+
+        grid3 = [
+            ['1', '2', '3'],
+            ['4', '5', '6'],
+            ['.', '8', '9']
+        ]
+        self.assertEqual(find_empty_positions(grid3), (2, 0))
+
+        grid4 = [
+            ['1', '2', '3'],
+            ['4', '5', '6'],
+            ['7', '8', '9']
+        ]
+        self.assertIsNone(find_empty_positions(grid4))
+
+    def test_find_possible_values(self):
+        """Проверка поиска возможных значений."""
+        grid = [
+            ['1', '2', '.'],
+            ['.', '5', '6'],
+            ['7', '8', '9']
+        ]
+
+        possible = find_possible_values(grid, (0, 2))
+        self.assertEqual(possible, {'3', '4'})
+
+        possible = find_possible_values(grid, (1, 0))
+        self.assertEqual(possible, {'3', '4'})
+
+        grid = [
+            ['5', '3', '.', '.', '7', '.', '.', '.', '.'],
+            ['6', '.', '.', '1', '9', '5', '.', '.', '.'],
+            ['.', '9', '8', '.', '.', '.', '.', '6', '.']
+        ]
+
+        possible = find_possible_values(grid, (0, 2))
+        self.assertEqual(possible, {'1', '2', '4'})
 
