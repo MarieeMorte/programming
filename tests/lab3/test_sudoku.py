@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.lab3.sudoku import find_empty_positions, find_possible_values, get_block, get_col, get_row, group
+from src.lab3.sudoku import *
 
 
 class SudokuTestCase(unittest.TestCase):
