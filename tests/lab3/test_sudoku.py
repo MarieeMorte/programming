@@ -307,3 +307,45 @@ class SudokuTestCase(unittest.TestCase):
             ["3", "4", "5", "2", "8", "6", "1", "7", "."],
         ]
         self.assertFalse(check_solution(incomplete_solution))
+
+    def test_generate_sudoku(self):
+        """Проверка генерации судоку."""
+        # Генерация полностью пустого судоку
+        grid = generate_sudoku(0)
+        empty_count = sum(1 for row in grid for e in row if e == ".")
+        self.assertEqual(empty_count, 81)
+
+        # Генерация полностью заполненного судоку
+        grid = generate_sudoku(81)
+        empty_count = sum(1 for row in grid for e in row if e == ".")
+        self.assertEqual(empty_count, 0)
+
+        # Генерация судоку с N > 81 (должен вернуть заполненный)
+        grid = generate_sudoku(100)
+        empty_count = sum(1 for row in grid for e in row if e == ".")
+        self.assertEqual(empty_count, 0)
+
+        # Генерация судоку с N < 0 (должен вернуть пустой)
+        grid = generate_sudoku(-10)
+        empty_count = sum(1 for row in grid for e in row if e == ".")
+        self.assertEqual(empty_count, 81)
+
+        # Генерация судоку с 40 заполненными клетками
+        grid = generate_sudoku(40)
+        empty_count = sum(1 for row in grid for e in row if e == ".")
+        self.assertEqual(empty_count, 41)  # 81 - 40 = 41 пустая клетка
+
+        # Проверка, что сгенерированное судоку имеет решение
+        for N in [20, 40, 60]:
+            grid = generate_sudoku(N)
+            solution = solve(grid)
+            self.assertIsNotNone(solution)
+            self.assertTrue(check_solution(solution))
+
+        # Проверка структуры сетки
+        grid = generate_sudoku(30)
+        self.assertEqual(len(grid), 9)
+        for row in grid:
+            self.assertEqual(len(row), 9)
+            for cell in row:
+                self.assertIn(cell, "123456789.")
