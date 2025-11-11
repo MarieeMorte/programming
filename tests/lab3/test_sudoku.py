@@ -39,9 +39,16 @@ class SudokuTestCase(unittest.TestCase):
             ['4', '.', '6'],
             ['7', '8', '9']
         ]
+
         self.assertEqual(get_row(grid, (0, 0)), ['1', '2', '.'])
+        self.assertEqual(get_row(grid, (0, 1)), ['1', '2', '.'])
+        self.assertEqual(get_row(grid, (0, 2)), ['1', '2', '.'])
         self.assertEqual(get_row(grid, (1, 0)), ['4', '.', '6'])
+        self.assertEqual(get_row(grid, (1, 1)), ['4', '.', '6'])
+        self.assertEqual(get_row(grid, (1, 2)), ['4', '.', '6'])
         self.assertEqual(get_row(grid, (2, 0)), ['7', '8', '9'])
+        self.assertEqual(get_row(grid, (2, 1)), ['7', '8', '9'])
+        self.assertEqual(get_row(grid, (2, 2)), ['7', '8', '9'])
 
     def test_get_col(self):
         """Проверка получения столбца."""
@@ -50,12 +57,20 @@ class SudokuTestCase(unittest.TestCase):
             ['4', '.', '6'],
             ['7', '8', '9']
         ]
+
         self.assertEqual(get_col(grid, (0, 0)), ['1', '4', '7'])
         self.assertEqual(get_col(grid, (0, 1)), ['2', '.', '8'])
         self.assertEqual(get_col(grid, (0, 2)), ['.', '6', '9'])
+        self.assertEqual(get_col(grid, (1, 0)), ['1', '4', '7'])
+        self.assertEqual(get_col(grid, (1, 1)), ['2', '.', '8'])
+        self.assertEqual(get_col(grid, (1, 2)), ['.', '6', '9'])
+        self.assertEqual(get_col(grid, (2, 0)), ['1', '4', '7'])
+        self.assertEqual(get_col(grid, (2, 1)), ['2', '.', '8'])
+        self.assertEqual(get_col(grid, (2, 2)), ['.', '6', '9'])
 
     def test_get_block(self):
         """Проверка получения блока."""
+        # Тест на маленькой сетке 6 x 6
         grid = [
             ['1', '2', '3', '.', '.', '.'],
             ['4', '5', '6', '.', '.', '.'],
@@ -64,8 +79,29 @@ class SudokuTestCase(unittest.TestCase):
             ['.', '.', '.', '.', '.', '.'],
             ['.', '.', '.', '.', '.', '.']
         ]
+
         self.assertEqual(get_block(grid, (0, 0)), ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
         self.assertEqual(get_block(grid, (1, 1)), ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
+
+        # Тест на полной сетке 9x9
+        full_grid = [
+            ['5', '3', '.', '.', '7', '.', '.', '.', '.'],
+            ['6', '.', '.', '1', '9', '5', '.', '.', '.'],
+            ['.', '9', '8', '.', '.', '.', '.', '6', '.'],
+            ['8', '.', '.', '.', '6', '.', '.', '.', '3'],
+            ['4', '.', '.', '8', '.', '3', '.', '.', '1'],
+            ['7', '.', '.', '.', '2', '.', '.', '.', '6'],
+            ['.', '6', '.', '.', '.', '.', '2', '8', '.'],
+            ['.', '.', '.', '4', '1', '9', '.', '.', '5'],
+            ['.', '.', '.', '.', '8', '.', '.', '7', '9']
+        ]
+
+        self.assertEqual(get_block(full_grid, (0, 0)), ['5', '3', '.', '6', '.', '.', '.', '9', '8'])
+        self.assertEqual(get_block(full_grid, (4, 4)), ['.', '6', '.', '8', '.', '3', '.', '2', '.'])
+        self.assertEqual(get_block(full_grid, (8, 8)), ['2', '8', '.', '.', '.', '5', '.', '7', '9'])
+
+        self.assertEqual(get_block(full_grid, (0, 0)), get_block(full_grid, (1, 1)))
+        self.assertEqual(get_block(full_grid, (3, 3)), get_block(full_grid, (4, 4)))
 
     def test_find_empty_positions(self):
         """Проверка поиска пустых позиций."""
