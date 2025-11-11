@@ -104,4 +104,3 @@ class SudokuTestCase(unittest.TestCase):
 
         possible = find_possible_values(grid, (0, 2))
         self.assertEqual(possible, {'1', '2', '4'})
-
