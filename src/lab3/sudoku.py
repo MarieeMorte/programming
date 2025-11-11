@@ -203,41 +203,48 @@ def generate_sudoku(N: int) -> tp.List[tp.List[str]]:
     >>> check_solution(solution)
     True
     """
-    base_solution = [
-        ["5", "3", "4", "6", "7", "8", "9", "1", "2"],
-        ["6", "7", "2", "1", "9", "5", "3", "4", "8"],
-        ["1", "9", "8", "3", "4", "2", "5", "6", "7"],
-        ["8", "5", "9", "7", "6", "1", "4", "2", "3"],
-        ["4", "2", "6", "8", "5", "3", "7", "9", "1"],
-        ["7", "1", "3", "9", "2", "4", "8", "5", "6"],
-        ["9", "6", "1", "5", "3", "7", "2", "8", "4"],
-        ["2", "8", "7", "4", "1", "9", "6", "3", "5"],
-        ["3", "4", "5", "2", "8", "6", "1", "7", "9"],
-    ]
+    grid = [["." for _ in range(9)] for _ in range(9)]
 
-    digits = list("123456789")
-    random.shuffle(digits)
-    mapping = {str(i + 1): digits[i] for i in range(9)}
+    def fill_grid(grid):
+        pos = find_empty_positions(grid)
+        if pos is None:
+            return True
 
-    new_solution = []
-    for row in base_solution:
-        new_row = [mapping[cell] for cell in row]
-        new_solution.append(new_row)
+        row, col = pos
+        numbers = list("123456789")
+        random.shuffle(numbers)
+
+        for num in numbers:
+            if (
+                num not in get_row(grid, (row, col))
+                and num not in get_col(grid, (row, col))
+                and num not in get_block(grid, (row, col))
+            ):
+
+                grid[row][col] = num
+
+                if fill_grid(grid):
+                    return True
+
+                grid[row][col] = "."
+
+        return False
+
+    fill_grid(grid)
 
     if N <= 0:
         return [["." for _ in range(9)] for _ in range(9)]
     elif N >= 81:
-        return new_solution
+        return grid
     else:
-        grid = [row[:] for row in new_solution]
+        result = [row[:] for row in grid]
         positions = [(i, j) for i in range(9) for j in range(9)]
         random.shuffle(positions)
 
         for i in range(81 - N):
             row, col = positions[i]
-            grid[row][col] = "."
-
-        return grid
+            result[row][col] = "."
+        return result
 
 
 if __name__ == "__main__":
