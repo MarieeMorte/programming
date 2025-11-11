@@ -163,11 +163,32 @@ def solve(grid: tp.List[tp.List[str]]) -> tp.Optional[tp.List[tp.List[str]]]:
 
     return None
 
+
 def check_solution(solution: tp.List[tp.List[str]]) -> bool:
     """ Если решение solution верно, то вернуть True, в противном случае False """
-    # TODO: Add doctests with bad puzzles
-    pass
+    if solution is None:
+        return False
 
+    if len(solution) != 9 or any(len(row) != 9 for row in solution):
+        return False
+
+    for i in range(9):
+        row = get_row(solution, (i, 0))
+        if set(row) != set("123456789"):
+            return False
+
+    for j in range(9):
+        col = get_col(solution, (0, j))
+        if set(col) != set("123456789"):
+            return False
+
+    for i in range(0, 9, 3):
+        for j in range(0, 9, 3):
+            block = get_block(solution, (i, j))
+            if set(block) != set("123456789"):
+                return False
+
+    return True
 
 def generate_sudoku(N: int) -> tp.List[tp.List[str]]:
     """Генерация судоку заполненного на N элементов
@@ -194,7 +215,7 @@ def generate_sudoku(N: int) -> tp.List[tp.List[str]]:
 
 
 if __name__ == "__main__":
-    for fname in ["puzzle1.txt", "puzzle2.txt", "puzzle3.txt"]:
+    for fname in ["src/lab3/puzzle1.txt", "src/lab3/puzzle2.txt", "src/lab3/puzzle3.txt"]:
         grid = read_sudoku(fname)
         display(grid)
         solution = solve(grid)
