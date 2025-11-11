@@ -249,3 +249,4 @@ if __name__ == "__main__":
             print(f"Puzzle {fname} can't be solved")
         else:
             display(solution)
+            print("Solution is correct\n" if check_solution(solution) else "Ooops\n")
