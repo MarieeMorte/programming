@@ -115,6 +115,11 @@ def find_possible_values(grid: tp.List[tp.List[str]], pos: tp.Tuple[int, int]) -
     >>> values == {'2', '5', '9'}
     True
     """
+    row, col = pos
+
+    if grid[row][col] != '.':
+        return set()
+
     all_values = set("123456789")
 
     row_values = set(get_row(grid, pos))
