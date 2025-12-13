@@ -1,8 +1,14 @@
+"""RSA encryption and decryption module.
+
+This module provides simplified implementations of RSA key generation,
+encryption, and decryption, along with helper functions.
+"""
+
 import random
 import typing as tp
 
 
-def is_prime(n: int) -> bool:
+def is_prime(number: int) -> bool:
     """
     Tests to see if a number is prime.
     >>> is_prime(2)
@@ -12,11 +18,19 @@ def is_prime(n: int) -> bool:
     >>> is_prime(8)
     False
     """
-    # PUT YOUR CODE HERE
-    pass
+    if number <= 1:
+        return False
+    if number == 2:
+        return True
+    if number % 2 == 0:
+        return False
+    for divisor in range(3, int(number**0.5) + 1, 2):
+        if number % divisor == 0:
+            return False
+    return True
 
 
-def gcd(a: int, b: int) -> int:
+def gcd(first: int, second: int) -> int:
     """
     Euclid's algorithm for determining the greatest common divisor.
     >>> gcd(12, 15)
@@ -24,48 +38,62 @@ def gcd(a: int, b: int) -> int:
     >>> gcd(3, 7)
     1
     """
-    # PUT YOUR CODE HERE
-    pass
+    while second != 0:
+        first, second = second, first % second
+    return first
 
 
-def multiplicative_inverse(e: int, phi: int) -> int:
+def multiplicative_inverse(e_value: int, phi_value: int) -> int:
     """
     Euclid's extended algorithm for finding the multiplicative
     inverse of two numbers.
     >>> multiplicative_inverse(7, 40)
     23
     """
-    # PUT YOUR CODE HERE
-    pass
+    original_phi = phi_value
+    x_prev, x_curr = 0, 1
+
+    while e_value > 1:
+        quotient = e_value // phi_value
+        e_value, phi_value = phi_value, e_value % phi_value
+        x_prev, x_curr = x_curr - quotient * x_prev, x_prev
+
+    if x_curr < 0:
+        x_curr += original_phi
+
+    return x_curr
 
 
-def generate_keypair(p: int, q: int) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:
+def generate_keypair(
+    p: int, q: int
+) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:  # pylint: disable=redefined-outer-name
+    """Generate RSA public/private keypair from two primes p and q."""
     if not (is_prime(p) and is_prime(q)):
         raise ValueError("Both numbers must be prime.")
-    elif p == q:
+    if p == q:
         raise ValueError("p and q cannot be equal")
 
-    # n = pq
-    # PUT YOUR CODE HERE
+    # n = p * q
+    n_val = p * q
 
-    # phi = (p-1)(q-1)
-    # PUT YOUR CODE HERE
+    # phi = (p - 1) * (q - 1)
+    phi_val = (p - 1) * (q - 1)
 
     # Choose an integer e such that e and phi(n) are coprime
-    e = random.randrange(1, phi)
+    e_val = random.randrange(1, phi_val)
 
     # Use Euclid's Algorithm to verify that e and phi(n) are coprime
-    g = gcd(e, phi)
-    while g != 1:
-        e = random.randrange(1, phi)
-        g = gcd(e, phi)
+    g_val = gcd(e_val, phi_val)
+    while g_val != 1:
+        e_val = random.randrange(1, phi_val)
+        g_val = gcd(e_val, phi_val)
 
     # Use Extended Euclid's Algorithm to generate the private key
-    d = multiplicative_inverse(e, phi)
+    d_val = multiplicative_inverse(e_val, phi_val)
 
     # Return public and private keypair
     # Public key is (e, n) and private key is (d, n)
-    return ((e, n), (d, n))
+    return (e_val, n_val), (d_val, n_val)
 
 
 def encrypt(pk: tp.Tuple[int, int], plaintext: str) -> tp.List[int]:
@@ -82,7 +110,7 @@ def decrypt(pk: tp.Tuple[int, int], ciphertext: tp.List[int]) -> str:
     # Unpack the key into its components
     key, n = pk
     # Generate the plaintext based on the ciphertext and key using a^b mod m
-    plain = [chr((char ** key) % n) for char in ciphertext]
+    plain = [chr((char**key) % n) for char in ciphertext]
     # Return the array of bytes as a string
     return "".join(plain)
 
