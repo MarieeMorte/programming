@@ -1,3 +1,9 @@
+"""
+Система рекомендаций фильмов для кинотеатра "Сокол".
+
+Анализирует историю просмотров пользователей и рекомендует фильмы
+на основе предпочтений похожих пользователей.
+"""
 import sys
 
 
@@ -6,31 +12,49 @@ def _convert_to_int_set(data):
     if isinstance(data, set):
         if all(isinstance(x, int) for x in data):
             return data
-        else:
-            return {int(x) for x in data}
-    elif isinstance(data, (list, tuple)):
         return {int(x) for x in data}
-    elif isinstance(data, str):
+
+    if isinstance(data, (list, tuple)):
+        return {int(x) for x in data}
+
+    if isinstance(data, str):
         return {int(x.strip()) for x in data.split(",") if x.strip()}
-    else:
-        raise TypeError(f"Неподдерживаемый тип данных: {type(data)}")
+
+    raise TypeError(f"Неподдерживаемый тип данных: {type(data)}")
 
 
-class Movie:
+class Movie:  # pylint: disable=too-few-public-methods
+    """
+    Класс для представления фильма.
+
+    Хранит идентификатор и название фильма для использования в системе рекомендаций.
+    """
+
     def __init__(self, movie_id, title):
-        self.id = movie_id
+        self.movie_id = movie_id
         self.title = title
 
 
 class UserHistory:
+    """
+    Представляет историю просмотров пользователя.
+
+    Хранит множество просмотренных фильмов
+    и предоставляет методы для вычисления сходства с другим пользователем
+    и получения рекомендаций на основе общих предпочтений.
+    """
+
     def __init__(self, watched_movies):
         try:
             self.watched_movies = _convert_to_int_set(watched_movies)
-        except (TypeError, ValueError) as e:
+        except (TypeError, ValueError) as error:
             self.watched_movies = set()
-            print(f"Предупреждение: не удалось создать историю просмотров: {e}")
+            print(f"Предупреждение: не удалось создать историю просмотров: {error}")
 
     def calculate_similarity(self, current_user_movies):
+        """
+        Вычисляет степень сходства с другим пользователем.
+        """
         try:
             current_set = _convert_to_int_set(current_user_movies)
         except (TypeError, ValueError):
@@ -43,6 +67,9 @@ class UserHistory:
         return common / len(current_set)
 
     def get_unwatched_movies(self, current_user_movies):
+        """
+        Возвращает фильмы, просмотренные другим пользователем, и не просмотренные текущим.
+        """
         try:
             current_set = _convert_to_int_set(current_user_movies)
         except (TypeError, ValueError):
@@ -52,6 +79,8 @@ class UserHistory:
 
 
 class RecommendationSystem:
+    """Основная система рекомендаций фильмов."""
+
     def __init__(self, movies_file="movies.txt", history_file="history.txt"):
         self.movies_file = movies_file
         self.history_file = history_file
@@ -59,6 +88,12 @@ class RecommendationSystem:
         self.user_histories = []
 
     def load_movies(self):
+        """
+        Загружает список фильмов из файла.
+
+        Читает файл с фильмами, парсит каждую строку и создает объекты Movie.
+        Пропускает строки с некорректным форматом или дублирующимися ID.
+        """
         try:
             with open(self.movies_file, "r", encoding="utf-8") as file:
                 line_num = 0
@@ -78,7 +113,9 @@ class RecommendationSystem:
                         title = parts[1].strip()
 
                         if movie_id in self.movies:
-                            print(f"Ошибка в строке {line_num}. ID {movie_id} уже зарегистрирован!\n")
+                            print(
+                                f"Ошибка в строке {line_num}. ID {movie_id} уже зарегистрирован!\n"
+                            )
                             continue
 
                         self.movies[movie_id] = Movie(movie_id, title)
@@ -92,6 +129,13 @@ class RecommendationSystem:
             sys.exit(1)
 
     def load_histories(self):
+        """
+        Загружает истории просмотров пользователей из файла.
+
+        Читает файл с историями,
+        преобразует каждую строку в множество ID и создает объекты UserHistory.
+        Пропускает пустые и некорректные строки.
+        """
         try:
             with open(self.history_file, encoding="utf-8") as file:
                 for line in file:
@@ -109,15 +153,15 @@ class RecommendationSystem:
         except FileNotFoundError:
             print(f"Файл {self.history_file} не найден")
             sys.exit(1)
-        except Exception as e:
-            print(f"Ошибка при чтении файла с историей: {e}")
-            sys.exit(1)
 
     def get_recommendation(self, current_user_input):
+        """
+        Генерирует рекомендацию на основе введённых фильмов.
+        """
         try:
             current_user_movies = _convert_to_int_set(current_user_input)
-        except (ValueError, TypeError) as e:
-            return f"Ошибка ввода: {str(e)}\n"
+        except (ValueError, TypeError) as error:
+            return f"Ошибка ввода: {str(error)}\n"
 
         if not current_user_movies:
             return "Ошибка: список просмотренных фильмов пуст\n"
@@ -151,13 +195,21 @@ class RecommendationSystem:
         return self.movies[recommended_movie_id].title
 
     def run(self):
+        """
+        Запускает интерактивный режим работы системы.
+
+        Загружает данные и входит в цикл диалога с пользователем,
+        запрашивая фильмы для рекомендации.
+        """
         print("Система рекомендаций фильмов\n")
 
         self.load_movies()
         self.load_histories()
 
         while True:
-            user_input = input('Введите ID просмотренных фильмов через запятую (или "выход" для завершения): ').strip()
+            user_input = input(
+                'Введите ID просмотренных фильмов через запятую (или "выход" для завершения): '
+            ).strip()
 
             if user_input.lower() == "выход":
                 print("До свидания!")
@@ -176,6 +228,12 @@ class RecommendationSystem:
 
 
 def main():
+    """
+    Точка входа в программу.
+
+    Создаёт и запускает систему рекомендаций фильмов.
+    Использует файлы movies.txt и history.txt по умолчанию.
+    """
     movies_file = "movies.txt"
     history_file = "history.txt"
 
