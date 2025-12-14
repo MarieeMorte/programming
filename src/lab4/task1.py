@@ -70,7 +70,7 @@ class RecommendationSystem:
 
                     parts = line.split(",", 1)
                     if len(parts) != 2:
-                        print(f"Ошибка в строке {line_num}: '{line}' - неверный формат")
+                        print(f"Ошибка в строке {line_num}: '{line}' - неверный формат\n")
                         continue
 
                     try:
@@ -78,13 +78,13 @@ class RecommendationSystem:
                         title = parts[1].strip()
 
                         if movie_id in self.movies:
-                            print(f"Ошибка в строке {line_num}. ID {movie_id} уже зарегистрирован!")
+                            print(f"Ошибка в строке {line_num}. ID {movie_id} уже зарегистрирован!\n")
                             continue
 
                         self.movies[movie_id] = Movie(movie_id, title)
 
                     except ValueError:
-                        print(f"Ошибка в строке {line_num}: '{line}' - ID должен быть числом")
+                        print(f"Ошибка в строке {line_num}: '{line}' - ID должен быть числом\nh3u")
                         continue
 
         except FileNotFoundError:
@@ -117,14 +117,14 @@ class RecommendationSystem:
         try:
             current_user_movies = _convert_to_int_set(current_user_input)
         except (ValueError, TypeError) as e:
-            return f"Ошибка ввода: {str(e)}"
+            return f"Ошибка ввода: {str(e)}\n"
 
         if not current_user_movies:
-            return "Ошибка: список просмотренных фильмов пуст"
+            return "Ошибка: список просмотренных фильмов пуст\n"
 
         for movie_id in current_user_movies:
             if movie_id not in self.movies:
-                return f"Ошибка: фильм с ID {movie_id} не найден в базе"
+                return f"Ошибка: фильм с ID {movie_id} не найден в базе\n"
 
         suitable_histories = []
         for history in self.user_histories:
@@ -151,20 +151,20 @@ class RecommendationSystem:
         return self.movies[recommended_movie_id].title
 
     def run(self):
-        print("Система рекомендаций фильмов")
+        print("Система рекомендаций фильмов\n")
 
         self.load_movies()
         self.load_histories()
 
         while True:
-            user_input = input("\nВведите ID просмотренных фильмов через запятую (или \"выход\" для завершения): ").strip()
+            user_input = input('Введите ID просмотренных фильмов через запятую (или "выход" для завершения): ').strip()
 
             if user_input.lower() == "выход":
                 print("До свидания!")
                 break
 
             if not user_input:
-                print("Ошибка: введите хотя бы один ID фильма")
+                print("\nОшибка: введите хотя бы один ID фильма\n")
                 continue
 
             result = self.get_recommendation(user_input)
@@ -172,7 +172,7 @@ class RecommendationSystem:
             if result.startswith("Ошибка"):
                 print(f"\n{result}")
             else:
-                print(f"\nРекомендация: {result}")
+                print(f"Рекомендация: {result}\n")
 
 
 def main():
