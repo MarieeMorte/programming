@@ -7,7 +7,7 @@
 import sys
 
 
-def _convert_to_int_set(data):
+def convert_to_int_set(data):
     """Безопасно преобразует данные в множество целых чисел"""
     if isinstance(data, set):
         if all(isinstance(x, int) for x in data):
@@ -46,7 +46,7 @@ class UserHistory:
 
     def __init__(self, watched_movies):
         try:
-            self.watched_movies = _convert_to_int_set(watched_movies)
+            self.watched_movies = convert_to_int_set(watched_movies)
         except (TypeError, ValueError) as error:
             self.watched_movies = set()
             print(f"Предупреждение: не удалось создать историю просмотров: {error}")
@@ -56,7 +56,7 @@ class UserHistory:
         Вычисляет степень сходства с другим пользователем.
         """
         try:
-            current_set = _convert_to_int_set(current_user_movies)
+            current_set = convert_to_int_set(current_user_movies)
         except (TypeError, ValueError):
             return 0.0
 
@@ -71,7 +71,7 @@ class UserHistory:
         Возвращает фильмы, просмотренные другим пользователем, и не просмотренные текущим.
         """
         try:
-            current_set = _convert_to_int_set(current_user_movies)
+            current_set = convert_to_int_set(current_user_movies)
         except (TypeError, ValueError):
             return self.watched_movies.copy()
 
@@ -144,7 +144,7 @@ class RecommendationSystem:
                         continue
 
                     try:
-                        movie_ids = _convert_to_int_set(line)
+                        movie_ids = convert_to_int_set(line)
                         if movie_ids:
                             self.user_histories.append(UserHistory(movie_ids))
                     except (ValueError, TypeError):
@@ -159,7 +159,7 @@ class RecommendationSystem:
         Генерирует рекомендацию на основе введённых фильмов.
         """
         try:
-            current_user_movies = _convert_to_int_set(current_user_input)
+            current_user_movies = convert_to_int_set(current_user_input)
         except (ValueError, TypeError) as error:
             return f"Ошибка ввода: {str(error)}\n"
 
