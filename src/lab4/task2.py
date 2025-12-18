@@ -1,3 +1,10 @@
+"""
+Модуль для разбивки респондентов по возрастным группам.
+Принимает границы возрастных групп как аргументы командной строки,
+читает данные респондентов из стандартного ввода и выводит
+разбивку по возрастным группам.
+"""
+
 import sys
 from typing import List, Tuple
 
@@ -15,6 +22,10 @@ class Respondent:
         if self.age == other.age:
             return self.name < other.name
         return self.age > other.age
+
+    def __str__(self) -> str:
+        """Строковое представление респондента для вывода."""
+        return f"{self.name} ({self.age})"
 
 
 class AgeGroup:
@@ -111,7 +122,8 @@ def read_respondents() -> List[Tuple[str, int]]:
                 continue
 
             if "," not in line:
-                print(f"Ошибка: некорректный формат строки '{line}'. Ожидается 'ФИО,возраст'")
+                print(f"Ошибка: некорректный формат строки '{line}'.")
+                print("Ожидается 'ФИО,возраст'")
                 continue
 
             name, age_str = line.split(",", 1)
@@ -125,7 +137,7 @@ def read_respondents() -> List[Tuple[str, int]]:
             try:
                 age = int(age_str)
                 if age < 0 or age > 123:
-                    print(f"Ошибка: возраст {age} вне допустимого диапазона (0-123)")
+                    print(f"Ошибка: возраст {age} вне диапазона (0-123)")
                     continue
 
                 respondents.append((name, age))
@@ -143,10 +155,8 @@ def read_respondents() -> List[Tuple[str, int]]:
 def main() -> None:
     """Основная функция программы."""
     if len(sys.argv) < 2:
-        print(
-            "В качестве аргументов указывается последовательность чисел, "
-            "задающих границы возрастных групп."
-        )
+        print("В качестве аргументов указывается последовательность чисел,")
+        print("задающих границы возрастных групп.")
         print("Пример: ./src/lab4/task2.py 18 25 35 45 60 80 100")
         sys.exit(1)
 
@@ -158,7 +168,7 @@ def main() -> None:
             limits.sort()
 
         if any(b <= 0 for b in limits):
-            print("Ошибка: границы возрастных групп должны быть положительными числами")
+            print("Ошибка: границы возрастных групп должны быть положительными")
             sys.exit(1)
 
     except ValueError:
