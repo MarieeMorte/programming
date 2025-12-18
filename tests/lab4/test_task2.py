@@ -284,7 +284,8 @@ class TestMainFunction(unittest.TestCase):
             sys.argv = ["task2.py", "18", "25", "35"]
 
             test_input = StringIO(
-                "Иванов Иван Иванович,30\nПетров Петр Петрович,20\nСидоров Сидор Сидорович,10\nEND\n"
+                "Иванов Иван Иванович,30\nПетров Петр Петрович,20\n"
+                "Сидоров Сидор Сидорович,10\nEND\n"
             )
             sys.stdin = test_input
 
@@ -339,8 +340,8 @@ class TestMainFunction(unittest.TestCase):
             try:
                 main()
                 self.fail("Expected SystemExit but it didn't happen")
-            except SystemExit as e:
-                self.assertEqual(e.code, 1)
+            except SystemExit as system_exit:
+                self.assertEqual(system_exit.code, 1)
         finally:
             sys.argv = original_argv
 
@@ -354,8 +355,8 @@ class TestMainFunction(unittest.TestCase):
             try:
                 main()
                 self.fail("Expected SystemExit but it didn't happen")
-            except SystemExit as e:
-                self.assertEqual(e.code, 1)
+            except SystemExit as system_exit:
+                self.assertEqual(system_exit.code, 1)
         finally:
             sys.argv = original_argv
 
@@ -369,8 +370,8 @@ class TestMainFunction(unittest.TestCase):
             try:
                 main()
                 self.fail("Expected SystemExit but it didn't happen")
-            except SystemExit as e:
-                self.assertEqual(e.code, 1)
+            except SystemExit as system_exit:
+                self.assertEqual(system_exit.code, 1)
         finally:
             sys.argv = original_argv
 
@@ -379,6 +380,7 @@ class TestIntegration(unittest.TestCase):
     """Интеграционные тесты"""
 
     def test_complete_workflow(self):
+        """Тест полного рабочего процесса."""
         manager = AgeGroupManager([18, 25, 35, 45, 60, 80, 100])
 
         respondents = [
