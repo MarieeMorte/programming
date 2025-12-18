@@ -114,7 +114,11 @@ def read_respondents() -> List[Tuple[str, int]]:
 
     while True:
         try:
-            line = input().strip()
+            line = sys.stdin.readline()
+            if not line:
+                break
+
+            line = line.strip()
             if line == "END":
                 break
 
@@ -157,7 +161,7 @@ def main() -> None:
     if len(sys.argv) < 2:
         print("В качестве аргументов указывается последовательность чисел,")
         print("задающих границы возрастных групп.")
-        print("Пример: ./src/lab4/task2.py 18 25 35 45 60 80 100")
+        print("Пример: python task2.py 18 25 35 45 60 80 100")
         sys.exit(1)
 
     try:
@@ -191,6 +195,9 @@ def main() -> None:
     else:
         for group in non_empty_groups:
             print(group)
+
+    if sys.stdin.isatty():
+        input("\nНажмите Enter для выхода.")
 
 
 if __name__ == "__main__":
