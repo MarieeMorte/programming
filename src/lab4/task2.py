@@ -197,7 +197,7 @@ def main() -> None:
             print(group)
 
     if sys.stdin.isatty():
-        input("\nНажмите Enter для выхода.")
+        input("\nНажмите Enter для выхода")
 
 
 if __name__ == "__main__":
