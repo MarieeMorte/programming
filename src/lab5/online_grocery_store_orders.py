@@ -39,19 +39,27 @@ def parse_order(line: str) -> Optional[dict[str, str]]:
     if len(parts) != 6:
         return None
 
+    cleaned_parts = [part.strip() for part in parts]
+
+    if not cleaned_parts[0]:
+        return None
+
     return {
-        "order_id": parts[0],
-        "products": parts[1],
-        "customer_name": parts[2],
-        "address": parts[3],
-        "phone": parts[4],
-        "priority": parts[5],
+        "order_id": cleaned_parts[0],
+        "products": cleaned_parts[1],
+        "customer_name": cleaned_parts[2],
+        "address": cleaned_parts[3],
+        "phone": cleaned_parts[4],
+        "priority": cleaned_parts[5],
     }
 
 
 def process_products(products_str: str) -> str:
     """Обработка набора продуктов с подсчетом количества"""
-    products = [p.strip() for p in products_str.split(",")]
+    products = [p.strip() for p in products_str.split(",") if p.strip()]
+
+    if not products:
+        return ""
 
     counter: Counter[str] = Counter()
     seen_order = []
@@ -101,17 +109,13 @@ def sort_orders(orders: List[Dict]) -> List[Dict]:
 
         priority_value = PRIORITY_ORDER.get(order["priority"], 3)
 
-        return country_order, country_name, priority_value
+        return country_order, country_name, priority_value, order["order_id"]
 
     return sorted(orders, key=sort_key)
 
 
 def main() -> None:
-    """Основная функция обработки заказов.
-
-    Читает заказы из файла orders.txt, валидирует их, обрабатывает ошибки,
-    сортирует валидные заказы и сохраняет результаты в файлы.
-    """
+    """Основная функция обработки заказов."""
     valid_orders = []
     errors = []
 
@@ -123,18 +127,22 @@ def main() -> None:
         return
 
     for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
         order = parse_order(line)
         if not order:
             continue
 
         order_id = order["order_id"]
 
-        if not validate_address(order["address"]):
-            error_value = "no data" if not order["address"].strip() else order["address"]
+        if not order["address"] or not validate_address(order["address"]):
+            error_value = "no data" if not order["address"] else order["address"]
             errors.append((order_id, ERROR_ADDRESS, error_value))
 
-        if not validate_phone(order["phone"]):
-            error_value = "no data" if not order["phone"].strip() else order["phone"]
+        if not order["phone"] or not validate_phone(order["phone"]):
+            error_value = "no data" if not order["phone"] else order["phone"]
             errors.append((order_id, ERROR_PHONE, error_value))
 
         if validate_address(order["address"]) and validate_phone(order["phone"]):
@@ -144,19 +152,22 @@ def main() -> None:
         for order_id, error_type, error_value in errors:
             file.write(f"{order_id};{error_type};{error_value}\n")
 
-    sorted_orders = sort_orders(valid_orders)
+    if valid_orders:
+        sorted_orders = sort_orders(valid_orders)
 
-    with open("order_country.txt", "w", encoding="utf-8") as file:
-        for order in sorted_orders:
-            products_formatted = process_products(order["products"])
+        with open("order_country.txt", "w", encoding="utf-8") as file:
+            for order in sorted_orders:
+                products_formatted = process_products(order["products"])
+                address_formatted = format_address(order["address"])
 
-            address_formatted = format_address(order["address"])
-
-            line = (
-                f"{order['order_id']};{products_formatted};{order['customer_name']};"
-                f"{address_formatted};{order['phone']};{order['priority']}"
-            )
-            file.write(line + "\n")
+                line = (
+                    f"{order['order_id']};{products_formatted};{order['customer_name']};"
+                    f"{address_formatted};{order['phone']};{order['priority']}"
+                )
+                file.write(line + "\n")
+    else:
+        with open("order_country.txt", "w", encoding="utf-8"):
+            pass
 
     print("Обработка завершена!")
     print(f"Валидных заказов: {len(valid_orders)}")
