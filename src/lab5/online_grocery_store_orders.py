@@ -1,6 +1,4 @@
-"""
-Модуль для обработки заказов онлайн-магазина продуктов.
-"""
+"""Модуль для обработки заказов онлайн-магазина продуктов."""
 
 import re
 from collections import Counter
@@ -14,19 +12,22 @@ PRIORITY_ORDER = {"MAX": 0, "MIDDLE": 1, "LOW": 2}
 
 def validate_address(address: str) -> bool:
     """Проверка адреса доставки"""
-    if not address.strip():
+    if not address or not address.strip():
         return False
 
     parts = address.split(". ")
     if len(parts) != 4:
         return False
 
-    return all(part.strip() for part in parts)
+    for part in parts:
+        if not part or not part.strip():
+            return False
+    return True
 
 
 def validate_phone(phone: str) -> bool:
     """Проверка номера телефона"""
-    if not phone.strip():
+    if not phone or not phone.strip():
         return False
 
     pattern = r"^\+\d-\d{3}-\d{3}-\d{2}-\d{2}$"
@@ -137,12 +138,18 @@ def main() -> None:
 
         order_id = order["order_id"]
 
-        if not order["address"] or not validate_address(order["address"]):
-            error_value = "no data" if not order["address"] else order["address"]
+        if not validate_address(order["address"]):
+            error_value = (
+                "no data"
+                if not order["address"] or not order["address"].strip()
+                else order["address"]
+            )
             errors.append((order_id, ERROR_ADDRESS, error_value))
 
-        if not order["phone"] or not validate_phone(order["phone"]):
-            error_value = "no data" if not order["phone"] else order["phone"]
+        if not validate_phone(order["phone"]):
+            error_value = (
+                "no data" if not order["phone"] or not order["phone"].strip() else order["phone"]
+            )
             errors.append((order_id, ERROR_PHONE, error_value))
 
         if validate_address(order["address"]) and validate_phone(order["phone"]):
@@ -166,7 +173,7 @@ def main() -> None:
                 )
                 file.write(line + "\n")
     else:
-        with open("order_country.txt", "w", encoding="utf-8"):
+        with open("order_country.txt", "w", encoding="utf-8") as file:
             pass
 
     print("Обработка завершена!")
