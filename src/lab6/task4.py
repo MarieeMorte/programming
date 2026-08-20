@@ -1,10 +1,20 @@
+"""
+Модуль с декоратором call_limiter для ограничения числа вызовов методов класса.
+"""
+
 import types
 from functools import wraps
 
 SKIP_MAGIC = {
-    '__getattribute__', '__setattr__', '__delattr__',
-    '__getattr__', '__setitem__', '__delitem__',
-    '__get__', '__set__', '__delete__'
+    "__getattribute__",
+    "__setattr__",
+    "__delattr__",
+    "__getattr__",
+    "__setitem__",
+    "__delitem__",
+    "__get__",
+    "__set__",
+    "__delete__",
 }
 
 
@@ -55,7 +65,7 @@ def _limit_method(func, limit, instance_based, class_id):
                 raise RuntimeError("Instance method called without self")
             key = id(args[0])
         else:
-            if args and hasattr(args[0], '__class__'):
+            if args and hasattr(args[0], "__class__"):
                 if isinstance(args[0], type):
                     key = id(args[0])
                 else:

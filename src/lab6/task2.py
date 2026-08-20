@@ -1,3 +1,7 @@
+"""
+Модуль с декоратором retry для повторных вызовов функций при ошибках.
+"""
+
 import time
 from functools import wraps
 
@@ -13,10 +17,10 @@ def retry(attempts, delay, exceptions=None):
             for attempt in range(1, attempts + 1):
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
+                except Exception as exc:  # pylint: disable=broad-except
                     if exceptions is not None:
                         exc_types = exceptions if isinstance(exceptions, tuple) else (exceptions,)
-                        if not any(isinstance(e, exc_type) for exc_type in exc_types):
+                        if not any(isinstance(exc, exc_type) for exc_type in exc_types):
                             raise
                     if attempt == attempts:
                         raise

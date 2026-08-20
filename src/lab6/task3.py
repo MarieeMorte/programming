@@ -1,22 +1,36 @@
+"""
+Модуль с декоратором logger для логирования вызовов методов класса.
+"""
+
 import time
 import types
 from functools import wraps
 
 SKIP_MAGIC = {
-    '__getattribute__', '__setattr__', '__delattr__',
-    '__getattr__', '__setitem__', '__delitem__',
-    '__get__', '__set__', '__delete__'
+    "__getattribute__",
+    "__setattr__",
+    "__delattr__",
+    "__getattr__",
+    "__setitem__",
+    "__delitem__",
+    "__get__",
+    "__set__",
+    "__delete__",
 }
 
 
 def logger(show_magic_methods=True):
+    """
+    Декоратор класса для логирования вызовов всех его методов.
+    """
+
     def decorator(cls):
         for attr_name, attr_value in list(cls.__dict__.items()):
             if attr_name in SKIP_MAGIC:
                 continue
 
             if isinstance(attr_value, types.FunctionType):
-                is_magic = attr_name.startswith('__') and attr_name.endswith('__')
+                is_magic = attr_name.startswith("__") and attr_name.endswith("__")
                 if is_magic and not show_magic_methods:
                     continue
                 wrapped = _wrap_method(attr_value, cls.__name__)
@@ -39,6 +53,10 @@ def logger(show_magic_methods=True):
 
 
 def _wrap_method(func, class_name):
+    """
+    Внутренняя функция для обёртки отдельного метода с логированием.
+    """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         print(f"Класс: {class_name}")

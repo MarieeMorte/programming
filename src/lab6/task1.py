@@ -1,8 +1,16 @@
+"""
+Модуль с декоратором logger для логирования вызовов функций.
+"""
+
 import time
 from functools import wraps
 
 
 def logger(func):
+    """
+    Декоратор, выводящий имя функции, аргументы и время выполнения.
+    """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         print(f"Вызов функции: {func.__name__}")
