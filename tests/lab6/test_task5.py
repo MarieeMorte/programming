@@ -1,10 +1,17 @@
+"""
+Модуль с unit-тестами для асинхронных функций из задания 5.
+Проверяет конкурентное выполнение и время работы.
+"""
+
 import asyncio
 import time
 import unittest
+
 from src.lab6.task5 import func1, func2
 
 
 class TestAsyncFunctions(unittest.TestCase):
+    """Тесты для асинхронных функций func1 и func2."""
 
     def test_execution_time(self):
         """Проверяем, что общее время меньше суммы всех задержек."""
@@ -14,10 +21,6 @@ class TestAsyncFunctions(unittest.TestCase):
         elapsed = time.perf_counter() - start
         self.assertLess(elapsed, 6.0)
         self.assertEqual(results, ["func1 завершена", "func2 завершена"])
-
-    def test_order_in_func1(self):
-        """Проверяем, что func1 выводит сообщения в правильном порядке (проверка через захват stdout)."""
-        pass
 
 
 if __name__ == "__main__":

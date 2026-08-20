@@ -1,13 +1,26 @@
+"""
+Модуль с unit-тестами для декоратора call_limiter из задания 4.
+Проверяет ограничение числа вызовов для обычных, статических и классовых методов,
+а также работу с наследованием и критическими магическими методами.
+"""
+
 import unittest
+
 from src.lab6.task4 import call_limiter
 
 
 class TestCallLimiter(unittest.TestCase):
+    """Тесты для декоратора call_limiter."""
 
     def test_limit_on_instance_methods(self):
+        """Проверяет ограничение для обычных методов (счётчик на экземпляр)."""
+
         @call_limiter(limit=2)
-        class A:
+        class A:  # pylint: disable=too-few-public-methods
+            """Внутренний тестовый класс."""
+
             def method(self):
+                """Возвращает 'OK'."""
                 return "OK"
 
         a = A()
@@ -24,10 +37,15 @@ class TestCallLimiter(unittest.TestCase):
             b.method()
 
     def test_limit_on_classmethod(self):
+        """Проверяет ограничение для классовых методов (счётчик на класс/подкласс)."""
+
         @call_limiter(limit=3)
-        class A:
+        class A:  # pylint: disable=too-few-public-methods
+            """Внутренний тестовый класс."""
+
             @classmethod
             def cm(cls):
+                """Возвращает имя класса."""
                 return cls.__name__
 
         self.assertEqual(A.cm(), "A")
@@ -36,8 +54,8 @@ class TestCallLimiter(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             A.cm()
 
-        class B(A):
-            pass
+        class B(A):  # pylint: disable=too-few-public-methods
+            """Подкласс A."""
 
         self.assertEqual(B.cm(), "B")
         self.assertEqual(B.cm(), "B")
@@ -49,38 +67,54 @@ class TestCallLimiter(unittest.TestCase):
             A.cm()
 
     def test_limit_on_staticmethod(self):
+        """Проверяет ограничение для статических методов (общий счётчик на класс)."""
+
         @call_limiter(limit=1)
-        class A:
+        class A:  # pylint: disable=too-few-public-methods
+            """Внутренний тестовый класс."""
+
             @staticmethod
             def sm():
+                """Возвращает 'static'."""
                 return "static"
 
         self.assertEqual(A.sm(), "static")
         with self.assertRaises(RuntimeError):
             A.sm()
 
-        class B(A):
-            pass
+        class B(A):  # pylint: disable=too-few-public-methods
+            """Подкласс A."""
 
         with self.assertRaises(RuntimeError):
             B.sm()
 
     def test_skip_critical_magic(self):
+        """Проверяет, что критические методы (__getattribute__) не обёртываются."""
+
         @call_limiter(limit=2)
-        class A:
+        class A:  # pylint: disable=too-few-public-methods
+            """Внутренний тестовый класс."""
+
             def __init__(self):
+                """Инициализирует атрибут x."""
                 self.x = 1
 
             def __getattribute__(self, name):
+                """Переопределённый доступ к атрибутам."""
                 return object.__getattribute__(self, name)
 
         a = A()
         self.assertEqual(a.x, 1)
 
     def test_limit_zero(self):
+        """Проверяет, что при limit=0 любой вызов сразу вызывает исключение."""
+
         @call_limiter(limit=0)
-        class A:
+        class A:  # pylint: disable=too-few-public-methods
+            """Внутренний тестовый класс."""
+
             def method(self):
+                """Возвращает 'OK'."""
                 return "OK"
 
         a = A()
@@ -88,8 +122,12 @@ class TestCallLimiter(unittest.TestCase):
             a.method()
 
     def test_preserve_metadata(self):
+        """Проверяет сохранение имени и документации метода (благодаря @wraps)."""
+
         @call_limiter(limit=1)
-        class A:
+        class A:  # pylint: disable=too-few-public-methods
+            """Внутренний тестовый класс."""
+
             def method(self, x):
                 """Документация метода."""
                 return x
