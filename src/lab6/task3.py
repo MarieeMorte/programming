@@ -1,6 +1,7 @@
 """Модуль с декоратором logger для логирования методов класса."""
 
 import time
+import types
 from functools import wraps
 
 
@@ -27,7 +28,7 @@ def logger(show_magic_methods=True):
 
     def decorator(target_class):
         for attribute_name, attribute_value in list(target_class.__dict__.items()):
-            if callable(attribute_value) and not isinstance(attribute_value, type):
+            if isinstance(attribute_value, types.FunctionType):
                 is_magic = attribute_name.startswith("__") and attribute_name.endswith("__")
                 if not show_magic_methods and is_magic:
                     continue
