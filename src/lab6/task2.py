@@ -4,7 +4,7 @@ import time
 from functools import wraps
 
 
-def retry(attempts, delay, exceptions=None):
+def retry(attempts, delay, exceptions: list = None):
     """Декоратор для повторного вызова функции при возникновении исключений."""
 
     def decorator(function):

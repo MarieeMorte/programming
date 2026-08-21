@@ -5,7 +5,7 @@ import types
 from functools import wraps
 
 
-def logger(show_magic_methods=True):
+def logger(show_magic_methods: bool = True):
     """Декоратор класса для логирования вызовов всех его методов."""
 
     def make_wrapper(method, method_name, class_name):
