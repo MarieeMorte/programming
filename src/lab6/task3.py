@@ -1,74 +1,42 @@
-"""
-Модуль с декоратором logger для логирования вызовов методов класса.
-"""
+"""Модуль с декоратором logger для логирования методов класса."""
 
 import time
-import types
 from functools import wraps
-
-SKIP_MAGIC = {
-    "__getattribute__",
-    "__setattr__",
-    "__delattr__",
-    "__getattr__",
-    "__setitem__",
-    "__delitem__",
-    "__get__",
-    "__set__",
-    "__delete__",
-}
 
 
 def logger(show_magic_methods=True):
-    """
-    Декоратор класса для логирования вызовов всех его методов.
-    """
+    """Декоратор класса для логирования вызовов всех его методов."""
 
-    def decorator(cls):
-        for attr_name, attr_value in list(cls.__dict__.items()):
-            if attr_name in SKIP_MAGIC:
-                continue
+    def make_wrapper(method, method_name, class_name):
+        """Создаёт обёртку для одного метода с логированием."""
 
-            if isinstance(attr_value, types.FunctionType):
-                is_magic = attr_name.startswith("__") and attr_name.endswith("__")
-                if is_magic and not show_magic_methods:
+        @wraps(method)
+        def wrapper(*args, **kwargs):
+            print(f"Вызов метода: {class_name}.{method_name}")
+            print(f"Аргументы: args={args}, kwargs={kwargs}")
+
+            start = time.perf_counter()
+            result = method(*args, **kwargs)
+            end = time.perf_counter()
+
+            print(f"Время выполнения: {end - start} сек.")
+            print(f"Результат: {result}")
+            return result
+
+        return wrapper
+
+    def decorator(target_class):
+        for attribute_name, attribute_value in list(target_class.__dict__.items()):
+            if callable(attribute_value) and not isinstance(attribute_value, type):
+                is_magic = attribute_name.startswith("__") and attribute_name.endswith("__")
+                if not show_magic_methods and is_magic:
                     continue
-                wrapped = _wrap_method(attr_value, cls.__name__)
-                setattr(cls, attr_name, wrapped)
 
-            elif isinstance(attr_value, staticmethod):
-                original_func = attr_value.__func__
-                wrapped_func = _wrap_method(original_func, cls.__name__)
-                setattr(cls, attr_name, staticmethod(wrapped_func))
+                wrapped_method = make_wrapper(
+                    attribute_value, attribute_name, target_class.__name__
+                )
+                setattr(target_class, attribute_name, wrapped_method)
 
-            elif isinstance(attr_value, classmethod):
-                original_func = attr_value.__func__
-                wrapped_func = _wrap_method(original_func, cls.__name__)
-                # noinspection PyTypeChecker
-                setattr(cls, attr_name, classmethod(wrapped_func))
-
-        return cls
+        return target_class
 
     return decorator
-
-
-def _wrap_method(func, class_name):
-    """
-    Внутренняя функция для обёртки отдельного метода с логированием.
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        print(f"Класс: {class_name}")
-        print(f"Метод: {func.__name__}")
-        print(f"Аргументы: args={args}, kwargs={kwargs}")
-
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        end = time.perf_counter()
-
-        print(f"Время выполнения: {end - start:.6f} сек.")
-        print(f"Результат: {result}")
-        return result
-
-    return wrapper

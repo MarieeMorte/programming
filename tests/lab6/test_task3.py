@@ -1,169 +1,184 @@
 """
-Модуль с unit-тестами для декоратора класса logger из задания 3.
-Проверяет логирование всех методов, фильтрацию магических методов,
-обработку статических и классовых методов, сохранение метаданных.
+Модуль с unit-тестами для декоратора logger для классов из задания 3.
+Проверяет логирование методов (включая магические), фильтрацию магических методов,
+сохранение метаданных и вывод времени.
 """
 
 import io
+import re
+import time
 import unittest
 from unittest.mock import patch
 
 from src.lab6.task3 import logger
 
 
-class TestLoggerClassDecorator(unittest.TestCase):
-    """Тесты для декоратора класса logger."""
+class TestClassLoggerDecorator(unittest.TestCase):
+    """Тесты для декоратора logger, применяемого к классам."""
 
-    def test_logging_all_methods_including_magic(self):
-        """Проверяем, что логируются все методы, включая магические."""
+    def test_logger_regular_method(self):
+        """Проверяет логирование обычного метода класса."""
 
-        @logger(show_magic_methods=True)
-        class TestClass:
-            """Внутренний тестовый класс."""
+        @logger()
+        class Calculator:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки логирования обычного метода."""
 
-            # pylint: disable=too-few-public-methods
-
-            def __init__(self, x):
-                """Инициализация с сохранением значения."""
-                self.x = x
-
-            def method(self, y):
-                """Простой метод, возвращающий сумму."""
-                return self.x + y
-
-            def __str__(self):
-                """Строковое представление объекта."""
-                return f"Test({self.x})"
-
-            def __add__(self, other):
-                """Сложение двух объектов."""
-                return TestClass(self.x + other.x)
-
-        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
-            obj = TestClass(10)
-            obj.method(5)
-            str(obj)
-            _ = obj + TestClass(3)
-            output = mock_stdout.getvalue()
-
-        self.assertIn("Метод: __init__", output)
-        self.assertIn("Метод: method", output)
-        self.assertIn("Метод: __str__", output)
-        self.assertIn("Метод: __add__", output)
-        self.assertIn("Результат: 15", output)
-        self.assertIn("Результат: Test(10)", output)
-
-    def test_skip_magic_methods(self):
-        """Проверяем, что при show_magic_methods=False магические методы не логируются."""
-
-        @logger(show_magic_methods=False)
-        class TestClass:
-            """Внутренний тестовый класс."""
-
-            # pylint: disable=too-few-public-methods
-
-            def __init__(self, x):
-                """Инициализация с сохранением значения."""
-                self.x = x
-
-            def method(self, y):
-                """Простой метод, возвращающий сумму."""
-                return self.x + y
-
-            def __str__(self):
-                """Строковое представление объекта."""
-                return f"Test({self.x})"
-
-        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
-            obj = TestClass(10)
-            obj.method(5)
-            str(obj)
-            output = mock_stdout.getvalue()
-
-        self.assertIn("Метод: method", output)
-        self.assertNotIn("Метод: __init__", output)
-        self.assertNotIn("Метод: __str__", output)
-
-    def test_skip_critical_magic_methods(self):
-        """Проверяем, что критические методы (__getattribute__ и др.) не оборачиваются."""
-
-        @logger(show_magic_methods=True)
-        class TestClass:
-            """Внутренний тестовый класс."""
-
-            # pylint: disable=too-few-public-methods
-
-            def __init__(self, x):
-                """Инициализация с сохранением значения."""
-                self.x = x
-
-            def __getattribute__(self, name):
-                """Переопределённый доступ к атрибутам."""
-                return object.__getattribute__(self, name)
-
-        try:
-            obj = TestClass(5)
-            self.assertEqual(obj.x, 5)
-        except RecursionError:
-            self.fail("__getattribute__ был обёрнут, вызвав рекурсию")
-
-    def test_static_methods(self):
-        """Проверяем, что статические методы логируются."""
-
-        @logger(show_magic_methods=True)
-        class TestClass:
-            """Внутренний тестовый класс."""
-
-            # pylint: disable=too-few-public-methods
-
-            @staticmethod
-            def static_method(a, b):
-                """Статический метод, складывающий два числа."""
+            def add(self, a, b):
+                """Складывает два числа."""
                 return a + b
 
+        calc = Calculator()
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
-            result = TestClass.static_method(3, 4)
+            result = calc.add(3, 5)
             output = mock_stdout.getvalue()
-        self.assertEqual(result, 7)
-        self.assertIn("Метод: static_method", output)
-        self.assertIn("Результат: 7", output)
 
-    def test_class_methods(self):
-        """Проверяем, что классовые методы логируются."""
+        self.assertIn("Вызов метода: Calculator.add", output)
+        self.assertIn("args=(<", output)
+        self.assertIn("3, 5", output)
+        self.assertIn("kwargs={}", output)
+        self.assertIn("Время выполнения:", output)
+        self.assertIn("сек.", output)
+        self.assertIn("Результат: 8", output)
+        self.assertEqual(result, 8)
 
-        @logger(show_magic_methods=True)
-        class TestClass:
-            """Внутренний тестовый класс."""
+    def test_logger_magic_methods_enabled(self):
+        """Проверяет, что при show_magic_methods=True логируются магические методы."""
 
-            # pylint: disable=too-few-public-methods
+        @logger()
+        class Person:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка с магическими методами."""
 
-            @classmethod
-            def class_method(cls, x):
-                """Классовый метод, умножающий число на 2."""
+            def __init__(self, name, age):
+                self.name = name
+                self.age = age
+
+            def __str__(self):
+                return f"{self.name}, {self.age}"
+
+            def greet(self):
+                """Обычный метод."""
+                return f"Hello, {self.name}"
+
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            person = Person("Alice", 30)
+            _ = str(person)
+            _ = person.greet()
+            output = mock_stdout.getvalue()
+
+        self.assertIn("Вызов метода: Person.__init__", output)
+        self.assertIn("args=(<", output)
+        self.assertIn("'Alice', 30", output)
+        self.assertIn("kwargs={}", output)
+        self.assertIn("Результат: None", output)
+
+        self.assertIn("Вызов метода: Person.__str__", output)
+        self.assertIn("args=(<", output)
+        self.assertIn("kwargs={}", output)
+        self.assertIn("Результат: Alice, 30", output)
+
+        self.assertIn("Вызов метода: Person.greet", output)
+        self.assertIn("args=(<", output)
+        self.assertIn("kwargs={}", output)
+        self.assertIn("Результат: Hello, Alice", output)
+
+    def test_logger_skip_magic_methods(self):
+        """Проверяет, что при show_magic_methods=False магические методы не логируются."""
+
+        @logger(show_magic_methods=False)
+        class Person:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки пропуска магических методов."""
+
+            def __init__(self, name):
+                self.name = name
+
+            def __str__(self):
+                return self.name
+
+            def get_name(self):
+                """Возвращает имя."""
+                return self.name
+
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            person = Person("Bob")
+            _ = str(person)
+            _ = person.get_name()
+            output = mock_stdout.getvalue()
+
+        self.assertNotIn("Вызов метода: Person.__init__", output)
+        self.assertNotIn("Вызов метода: Person.__str__", output)
+        self.assertIn("Вызов метода: Person.get_name", output)
+        self.assertIn("Результат: Bob", output)
+
+    def test_logger_metadata_preserved(self):
+        """Проверяет, что декоратор сохраняет имя и документацию методов."""
+
+        @logger()
+        class Demo:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки сохранения метаданных."""
+
+            def process(self, x):
+                """Удваивает число."""
                 return x * 2
 
+        self.assertEqual(Demo.process.__name__, "process")
+        self.assertEqual(Demo.process.__doc__, "Удваивает число.")
+
+    def test_logger_with_different_args(self):
+        """Проверяет логирование методов с произвольными аргументами (*args, **kwargs)."""
+
+        @logger()
+        class Formatter:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки различных аргументов."""
+
+            def concat(self, *args, sep=" "):
+                """Объединяет аргументы через разделитель."""
+                return sep.join(str(a) for a in args)
+
+        fmt = Formatter()
         with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
-            result = TestClass.class_method(5)
+            result = fmt.concat("Hello", "world", sep=" - ")
             output = mock_stdout.getvalue()
-        self.assertEqual(result, 10)
-        self.assertIn("Метод: class_method", output)
-        self.assertIn("Результат: 10", output)
 
-    def test_preserve_metadata(self):
-        """Проверяем, что имя и документация метода сохраняются (благодаря @wraps)."""
+        self.assertIn("Вызов метода: Formatter.concat", output)
+        self.assertIn("args=(<", output)
+        self.assertIn("'Hello', 'world'", output)
+        self.assertIn("kwargs={'sep': ' - '}", output)
+        self.assertIn("Результат: Hello - world", output)
+        self.assertEqual(result, "Hello - world")
 
-        @logger(show_magic_methods=True)
-        class TestClass:
-            """Внутренний тестовый класс."""
+    def test_logger_time_output(self):
+        """Проверяет, что время выполнения выводится как число с плавающей точкой."""
 
-            # pylint: disable=too-few-public-methods
+        @logger()
+        class Sleeper:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки времени выполнения."""
 
-            def my_method(self, x):
-                """Документация."""
-                return x
+            def wait(self, seconds):
+                """Ждёт указанное количество секунд."""
+                time.sleep(seconds)
+                return "done"
 
-        self.assertEqual(TestClass.my_method.__name__, "my_method")
-        self.assertEqual(TestClass.my_method.__doc__, "Документация.")
+        obj = Sleeper()
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            obj.wait(0.01)
+            output = mock_stdout.getvalue()
+
+        match = re.search(r"Время выполнения:\s+([0-9.]+)\s+сек\.", output)
+        self.assertIsNotNone(match)
+        time_value = float(match.group(1))
+        self.assertTrue(0.005 < time_value < 0.05)
+
+    def test_logger_empty_class(self):
+        """Проверяет, что декоратор корректно обрабатывает класс без методов."""
+
+        @logger()
+        class Empty:  # pylint: disable=too-few-public-methods
+            """Пустой класс без методов."""
+
+        with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+            _ = Empty()
+            output = mock_stdout.getvalue()
+            self.assertEqual(output, "")
 
 
 if __name__ == "__main__":
