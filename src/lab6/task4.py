@@ -31,10 +31,10 @@ def call_limiter(limit: int):
         return wrapper
 
     def decorator(target_class):
-        for attr_name, attr_value in list(target_class.__dict__.items()):
-            if isinstance(attr_value, types.FunctionType):
-                wrapped = make_wrapper(attr_value, attr_name)
-                setattr(target_class, attr_name, wrapped)
+        for attribute_name, attribute_value in list(target_class.__dict__.items()):
+            if isinstance(attribute_value, types.FunctionType):
+                wrapped = make_wrapper(attribute_value, attribute_name)
+                setattr(target_class, attribute_name, wrapped)
         return target_class
 
     return decorator
