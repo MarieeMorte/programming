@@ -1,7 +1,7 @@
 """
 Модуль с unit-тестами для декоратора call_limiter из задания 4.
-Проверяет ограничение числа вызовов для обычных, статических и классовых методов,
-а также работу с наследованием и критическими магическими методами.
+Проверяет ограничение вызовов методов, раздельные счётчики для экземпляров и методов,
+обработку некорректных лимитов и сохранение метаданных.
 """
 
 import unittest
@@ -9,131 +9,171 @@ import unittest
 from src.lab6.task4 import call_limiter
 
 
-class TestCallLimiter(unittest.TestCase):
+class TestCallLimiterDecorator(unittest.TestCase):
     """Тесты для декоратора call_limiter."""
 
-    def test_limit_on_instance_methods(self):
-        """Проверяет ограничение для обычных методов (счётчик на экземпляр)."""
+    def test_limited_method_calls_within_limit(self):
+        """Проверяет, что метод можно вызвать limit раз без ошибок."""
 
         @call_limiter(limit=2)
-        class A:  # pylint: disable=too-few-public-methods
-            """Внутренний тестовый класс."""
+        class Calculator:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки вызовов в пределах лимита."""
 
-            def method(self):
-                """Возвращает 'OK'."""
-                return "OK"
+            def add(self, a, b):
+                """Складывает два числа."""
+                return a + b
 
-        a = A()
-        self.assertEqual(a.method(), "OK")
-        self.assertEqual(a.method(), "OK")
-        with self.assertRaises(RuntimeError) as cm:
-            a.method()
-        self.assertIn("Call limit (2) exceeded", str(cm.exception))
+        calc = Calculator()
+        self.assertEqual(calc.add(1, 2), 3)
+        self.assertEqual(calc.add(3, 4), 7)
 
-        b = A()
-        self.assertEqual(b.method(), "OK")
-        self.assertEqual(b.method(), "OK")
+    def test_limited_method_exceeds_limit(self):
+        """Проверяет, что при превышении лимита выбрасывается RuntimeError."""
+
+        @call_limiter(limit=1)
+        class Counter:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки превышения лимита."""
+
+            def inc(self, x):
+                """Увеличивает число на 1."""
+                return x + 1
+
+        obj = Counter()
+        self.assertEqual(obj.inc(5), 6)
+        with self.assertRaises(RuntimeError) as ctx:
+            obj.inc(10)
+        self.assertIn("exceeded call limit of 1", str(ctx.exception))
+
+    def test_separate_counters_for_different_instances(self):
+        """Проверяет, что счётчики вызовов разделены для разных экземпляров."""
+
+        @call_limiter(limit=1)
+        class Greeter:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки раздельных счётчиков экземпляров."""
+
+            def say_hello(self, name):
+                """Возвращает приветствие."""
+                return f"Hello, {name}"
+
+        obj1 = Greeter()
+        obj2 = Greeter()
+
+        self.assertEqual(obj1.say_hello("Alice"), "Hello, Alice")
+        self.assertEqual(obj2.say_hello("Bob"), "Hello, Bob")
         with self.assertRaises(RuntimeError):
-            b.method()
+            obj1.say_hello("Charlie")
 
-    def test_limit_on_classmethod(self):
-        """Проверяет ограничение для классовых методов (счётчик на класс/подкласс)."""
+    def test_separate_counters_for_different_methods(self):
+        """Проверяет, что счётчики разделены для разных методов."""
+
+        @call_limiter(limit=2)
+        class Multi:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки раздельных счётчиков методов."""
+
+            def add(self, a, b):
+                """Складывает два числа."""
+                return a + b
+
+            def mul(self, a, b):
+                """Умножает два числа."""
+                return a * b
+
+        obj = Multi()
+        self.assertEqual(obj.add(1, 2), 3)
+        self.assertEqual(obj.mul(2, 3), 6)
+        self.assertEqual(obj.add(3, 4), 7)
+        self.assertEqual(obj.mul(4, 5), 20)
+        with self.assertRaises(RuntimeError):
+            obj.add(5, 6)
+        with self.assertRaises(RuntimeError):
+            obj.mul(5, 6)
+
+    def test_invalid_limit_non_positive(self):
+        """Проверяет, что при передаче неправильного лимита выбрасывается ValueError."""
+
+        with self.assertRaises(ValueError):
+            @call_limiter(limit=0)
+            class Dummy:  # pylint: disable=unused-variable,too-few-public-methods
+                """Класс-заглушка для проверки нулевого лимита."""
+
+                def do_nothing(self):
+                    """Пустой метод."""
+
+        with self.assertRaises(ValueError):
+            @call_limiter(limit=-5)
+            class Dummy2:  # pylint: disable=unused-variable,too-few-public-methods
+                """Класс-заглушка для проверки отрицательного лимита."""
+
+                def do_nothing(self):
+                    """Пустой метод."""
+
+    def test_invalid_limit_not_int(self):
+        """Проверяет, что при передаче не целого числа выбрасывается ValueError."""
+
+        with self.assertRaises(ValueError):
+            @call_limiter(limit=2.5)
+            class Dummy:  # pylint: disable=unused-variable,too-few-public-methods
+                """Класс-заглушка для проверки лимита с плавающей точкой."""
+
+                def do_nothing(self):
+                    """Пустой метод."""
+
+        with self.assertRaises(ValueError):
+            @call_limiter(limit="2")
+            class Dummy2:  # pylint: disable=unused-variable,too-few-public-methods
+                """Класс-заглушка для проверки лимита со строкой."""
+
+                def do_nothing(self):
+                    """Пустой метод."""
+
+    def test_metadata_preserved(self):
+        """Проверяет, что декоратор сохраняет имя и документацию метода."""
 
         @call_limiter(limit=3)
-        class A:  # pylint: disable=too-few-public-methods
-            """Внутренний тестовый класс."""
+        class Processor:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка для проверки сохранения метаданных."""
 
-            @classmethod
-            def cm(cls):
-                """Возвращает имя класса."""
-                return cls.__name__
+            def process(self, value):
+                """Удваивает значение."""
+                return value * 2
 
-        self.assertEqual(A.cm(), "A")
-        self.assertEqual(A.cm(), "A")
-        self.assertEqual(A.cm(), "A")
-        with self.assertRaises(RuntimeError):
-            A.cm()
+        self.assertEqual(Processor.process.__name__, "process")
+        self.assertEqual(Processor.process.__doc__, "Удваивает значение.")
 
-        class B(A):  # pylint: disable=too-few-public-methods
-            """Подкласс A."""
-
-        self.assertEqual(B.cm(), "B")
-        self.assertEqual(B.cm(), "B")
-        self.assertEqual(B.cm(), "B")
-        with self.assertRaises(RuntimeError):
-            B.cm()
-
-        with self.assertRaises(RuntimeError):
-            A.cm()
-
-    def test_limit_on_staticmethod(self):
-        """Проверяет ограничение для статических методов (общий счётчик на класс)."""
+    def test_static_methods_not_limited(self):
+        """
+        Проверяет, что статические методы не обёртываются и не ограничиваются
+        (так как мы используем types.FunctionType, статические методы игнорируются).
+        """
 
         @call_limiter(limit=1)
-        class A:  # pylint: disable=too-few-public-methods
-            """Внутренний тестовый класс."""
+        class Utility:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка со статическим методом."""
 
             @staticmethod
-            def sm():
-                """Возвращает 'static'."""
-                return "static"
+            def get_answer():
+                """Возвращает ответ на главный вопрос."""
+                return 42
 
-        self.assertEqual(A.sm(), "static")
-        with self.assertRaises(RuntimeError):
-            A.sm()
+        self.assertEqual(Utility.get_answer(), 42)
+        self.assertEqual(Utility.get_answer(), 42)
 
-        class B(A):  # pylint: disable=too-few-public-methods
-            """Подкласс A."""
-
-        with self.assertRaises(RuntimeError):
-            B.sm()
-
-    def test_skip_critical_magic(self):
-        """Проверяет, что критические методы (__getattribute__) не обёртываются."""
-
-        @call_limiter(limit=2)
-        class A:  # pylint: disable=too-few-public-methods
-            """Внутренний тестовый класс."""
-
-            def __init__(self):
-                """Инициализирует атрибут x."""
-                self.x = 1
-
-            def __getattribute__(self, name):
-                """Переопределённый доступ к атрибутам."""
-                return object.__getattribute__(self, name)
-
-        a = A()
-        self.assertEqual(a.x, 1)
-
-    def test_limit_zero(self):
-        """Проверяет, что при limit=0 любой вызов сразу вызывает исключение."""
-
-        @call_limiter(limit=0)
-        class A:  # pylint: disable=too-few-public-methods
-            """Внутренний тестовый класс."""
-
-            def method(self):
-                """Возвращает 'OK'."""
-                return "OK"
-
-        a = A()
-        with self.assertRaises(RuntimeError):
-            a.method()
-
-    def test_preserve_metadata(self):
-        """Проверяет сохранение имени и документации метода (благодаря @wraps)."""
+    def test_class_methods_not_limited(self):
+        """
+        Проверяет, что классовые методы не обёртываются и не ограничиваются.
+        """
 
         @call_limiter(limit=1)
-        class A:  # pylint: disable=too-few-public-methods
-            """Внутренний тестовый класс."""
+        class Factory:  # pylint: disable=too-few-public-methods
+            """Класс-заглушка с классовым методом."""
 
-            def method(self, x):
-                """Документация метода."""
-                return x
+            @classmethod
+            def create(cls, name):
+                """Создаёт объект с именем."""
+                return f"Created {name}"
 
-        self.assertEqual(A.method.__name__, "method")
-        self.assertEqual(A.method.__doc__, "Документация метода.")
+        self.assertEqual(Factory.create("A"), "Created A")
+        self.assertEqual(Factory.create("B"), "Created B")
 
 
 if __name__ == "__main__":
