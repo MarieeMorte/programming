@@ -1,26 +1,23 @@
-"""
-Модуль с декоратором retry для повторных вызовов функций при ошибках.
-"""
+"""Модуль с декоратором retry для повторных вызовов функций при ошибках."""
 
 import time
 from functools import wraps
 
 
 def retry(attempts, delay, exceptions=None):
-    """
-    Декоратор для повторного вызова функции при возникновении исключений.
-    """
+    """Декоратор для повторного вызова функции при возникновении исключений."""
 
-    def decorator(func):
-        @wraps(func)
+    def decorator(function):
+        @wraps(function)
         def wrapper(*args, **kwargs):
             for attempt in range(1, attempts + 1):
                 try:
-                    return func(*args, **kwargs)
-                except Exception as exc:  # pylint: disable=broad-except
+                    return function(*args, **kwargs)
+                except Exception as exception:  # pylint: disable=broad-except
                     if exceptions is not None:
-                        exc_types = exceptions if isinstance(exceptions, tuple) else (exceptions,)
-                        if not any(isinstance(exc, exc_type) for exc_type in exc_types):
+                        if not any(
+                            isinstance(exception, exception_type) for exception_type in exceptions
+                        ):
                             raise
                     if attempt == attempts:
                         raise
