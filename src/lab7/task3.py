@@ -34,7 +34,7 @@ def sync_requests() -> tuple[dict[str, float], float]:
             print(f"Ошибка при запросе к {url}: {e} (затрачено {elapsed:.3f} с)")
 
     total = time.perf_counter() - start_total
-    print(f"Общее время: {total:.3f} с\n")
+    print(f"Общее время (синхронно): {total:.3f} с\n")
     return times, total
 
 
@@ -42,7 +42,7 @@ async def fetch_url(session: aiohttp.ClientSession, url: str) -> tuple[str, floa
     """Асинхронно выполняет GET-запрос к одному URL."""
     start = time.perf_counter()
     try:
-        async with session.get(url, timeout=10) as response:
+        async with session.get(url) as response:
             await response.text()
             elapsed = time.perf_counter() - start
             print(f"Ответ от {url}: {elapsed:.3f} с (статус {response.status})")
@@ -59,14 +59,15 @@ async def async_requests() -> tuple[dict[str, float], float]:
     start_total = time.perf_counter()
     times = {}
 
-    async with aiohttp.ClientSession() as session:
+    timeout = aiohttp.ClientTimeout(total=10)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         tasks = [fetch_url(session, url) for url in URLS]
         results = await asyncio.gather(*tasks)
         for url, elapsed in results:
             times[url] = elapsed
 
     total = time.perf_counter() - start_total
-    print(f"Общее время: {total:.3f} с\n")
+    print(f"Общее время (асинхронно): {total:.3f} с\n")
     return times, total
 
 
