@@ -11,15 +11,19 @@ async def async_print(delay: float, message: str) -> None:
 
 async def main():
     """Демонстрация конкурентного выполнения async_print."""
+    loop = asyncio.get_running_loop()
+
     tasks = [
         async_print(2, "Сообщение через 2 с"),
         async_print(1, "Сообщение через 1 с"),
         async_print(3, "Сообщение через 3 с"),
     ]
-    start = asyncio.get_event_loop().time()
+
+    start = loop.time()
     await asyncio.gather(*tasks)
-    elapsed = asyncio.get_event_loop().time() - start
-    print(f"Общее время выполнения: {elapsed} с (ожидаем ~3 с)")
+    elapsed = loop.time() - start
+
+    print(f"Общее время выполнения: {elapsed:.3f}")
 
 
 if __name__ == "__main__":
