@@ -41,11 +41,11 @@ def main():
     messages = ["Сообщение 1", "Сообщение 2", "Сообщение 3"]
     delay = 2.0
 
-    print("=== Сравнение последовательного и потокового выполнения ===\n")
+    print("Сравнение последовательного и потокового выполнения\n")
     seq_time = run_sequential(messages, delay)
     thr_time = run_threaded(messages, delay)
 
-    print(f"\nРазница: {seq_time - thr_time:.3f} с (потоки быстрее)")
+    print(f"\nРазница: {seq_time - thr_time:.3f} с")
 
 
 if __name__ == "__main__":
