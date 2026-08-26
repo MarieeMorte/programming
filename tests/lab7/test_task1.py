@@ -12,7 +12,7 @@ class TestAsyncPrint(unittest.TestCase):
     """Тесты для async_print."""
 
     def test_delay(self):
-        """Проверяет, что задержка соответствует переданной (с погрешностью 0.1 с)."""
+        """Проверяет, что задержка соответствует переданной."""
 
         async def run():
             start = asyncio.get_event_loop().time()

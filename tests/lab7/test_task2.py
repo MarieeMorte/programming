@@ -12,7 +12,7 @@ class TestRunMultiple(unittest.TestCase):
     """Тесты конкурентного запуска."""
 
     def test_execution_time(self):
-        """Проверяет, что общее время ~3 секунды, а не сумма (6 секунд)."""
+        """Проверяет, что общее время ~3 секунды, а не сумма."""
 
         async def run():
             start = asyncio.get_event_loop().time()

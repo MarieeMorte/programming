@@ -38,7 +38,7 @@ def main():
     iterations = 100000
     expected = threads * iterations
 
-    print("=== Решение гонки данных с помощью блокировки ===")
+    print("Решение гонки данных с помощью блокировки")
     print(f"Потоков: {threads}, итераций на поток: {iterations}")
     print(f"Ожидаемое значение счётчика: {expected}")
 

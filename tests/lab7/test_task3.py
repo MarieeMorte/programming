@@ -9,10 +9,7 @@ class TestRequests(unittest.IsolatedAsyncioTestCase):
     """Тесты для синхронной и асинхронной версий."""
 
     async def test_sync_vs_async_time(self):
-        """
-        Проверяем, что синхронное выполнение занимает больше времени,
-        чем асинхронное (из-за конкурентности).
-        """
+        """Проверяем, что синхронное выполнение занимает больше времени, чем асинхронное."""
         _, sync_total = sync_requests()
         _, async_total = await async_requests()
         self.assertGreater(sync_total, async_total)
@@ -21,7 +18,7 @@ class TestRequests(unittest.IsolatedAsyncioTestCase):
     async def test_async_time_approx_max_delay(self):
         """
         Проверяем, что асинхронное общее время приблизительно равно
-        максимальной задержке (5 с) с погрешностью ±2.5 секунды.
+        максимальной задержке (5 с) с погрешностью +- 2,5 секунды.
         """
         _, total = await async_requests()
         self.assertAlmostEqual(total, 5.0, delta=2.5)
