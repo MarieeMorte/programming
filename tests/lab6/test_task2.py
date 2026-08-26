@@ -54,7 +54,6 @@ class TestRetryDecorator(unittest.TestCase):
     def test_filter_exceptions(self):
         """Проверяет, что неподходящие исключения не перехватываются и повторных попыток нет."""
 
-        # Передаём список ожидаемых типов
         @retry(attempts=3, delay=0.1, exceptions=[ValueError, TypeError])
         def raise_other():
             raise IndexError("Не подходит")
