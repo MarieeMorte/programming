@@ -34,7 +34,7 @@ def sync_requests() -> tuple[dict[str, float], float]:
             print(f"Ошибка при запросе к {url}: {e} (затрачено {elapsed:.3f} с)")
 
     total = time.perf_counter() - start_total
-    print(f"Общее время (синхронно): {total:.3f} с\n")
+    print(f"Общее время: {total:.3f} с\n")
     return times, total
 
 
@@ -66,7 +66,7 @@ async def async_requests() -> tuple[dict[str, float], float]:
             times[url] = elapsed
 
     total = time.perf_counter() - start_total
-    print(f"Общее время (асинхронно): {total:.3f} с\n")
+    print(f"Общее время: {total:.3f} с\n")
     return times, total
 
 
