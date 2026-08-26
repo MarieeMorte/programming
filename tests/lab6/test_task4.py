@@ -137,10 +137,7 @@ class TestCallLimiterDecorator(unittest.TestCase):
         self.assertEqual(Processor.process.__doc__, "Удваивает значение.")
 
     def test_static_methods_not_limited(self):
-        """
-        Проверяет, что статические методы не обёртываются и не ограничиваются
-        (так как мы используем types.FunctionType, статические методы игнорируются).
-        """
+        """Проверяет, что статические методы не обёртываются и не ограничиваются."""
 
         @call_limiter(limit=1)
         class Utility:  # pylint: disable=too-few-public-methods
@@ -155,9 +152,7 @@ class TestCallLimiterDecorator(unittest.TestCase):
         self.assertEqual(Utility.get_answer(), 42)
 
     def test_class_methods_not_limited(self):
-        """
-        Проверяет, что классовые методы не обёртываются и не ограничиваются.
-        """
+        """Проверяет, что классовые методы не обёртываются и не ограничиваются."""
 
         @call_limiter(limit=1)
         class Factory:  # pylint: disable=too-few-public-methods
