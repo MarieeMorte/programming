@@ -19,10 +19,11 @@ async def run_multiple() -> list[str]:
 
 async def main():
     """Демонстрация работы."""
-    start = asyncio.get_event_loop().time()
+    loop = asyncio.get_running_loop()
+    start = loop.time()
     await run_multiple()
-    elapsed = asyncio.get_event_loop().time() - start
-    print(f"Общее время выполнения: {elapsed:.2f} с (ожидаем ~3 с)")
+    elapsed = loop.time() - start
+    print(f"Общее время выполнения: {elapsed:.2f} с")
 
 
 if __name__ == "__main__":

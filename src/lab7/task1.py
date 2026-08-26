@@ -23,7 +23,7 @@ async def main():
     await asyncio.gather(*tasks)
     elapsed = loop.time() - start
 
-    print(f"Общее время выполнения: {elapsed:.3f}")
+    print(f"Общее время выполнения: {elapsed:.3f} с")
 
 
 if __name__ == "__main__":
