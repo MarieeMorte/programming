@@ -16,8 +16,8 @@ URLS = [
 
 
 def sync_requests() -> tuple[dict[str, float], float]:
-    """Выполняет запросы синхронно (последовательно)."""
-    print("=== СИНХРОННЫЙ режим ===")
+    """Выполняет запросы синхронно."""
+    print("Синхронный режим")
     times = {}
     start_total = time.perf_counter()
 
@@ -55,7 +55,7 @@ async def fetch_url(session: aiohttp.ClientSession, url: str) -> tuple[str, floa
 
 async def async_requests() -> tuple[dict[str, float], float]:
     """Выполняет запросы асинхронно (конкурентно)."""
-    print("=== АСИНХРОННЫЙ режим ===")
+    print("Асинхронный режим")
     start_total = time.perf_counter()
     times = {}
 
