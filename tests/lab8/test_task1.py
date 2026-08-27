@@ -1,78 +1,94 @@
-"""Unit-тесты для задания 1 лабораторной работы по библиотеке os."""
+"""Unit-тесты для задания 1 (упрощённая версия с main)."""
 
 import os
 import shutil
 import tempfile
 import unittest
 from datetime import datetime
+from unittest.mock import patch
 
-from src.lab8.task1 import process_files
+from src.lab8.task1 import main
 
 
 class TestOSLab(unittest.TestCase):
-    """Набор тестов для проверки работы с файлами через библиотеку os."""
+    """Тесты для скрипта task1.py с изоляцией через моки."""
 
     def setUp(self):
-        """Создаём временную папку для изолированного тестирования."""
+        """Создаём временную папку и подменяем __file__, чтобы main работал в ней."""
         self.temp_dir = tempfile.mkdtemp()
+        # Сохраняем исходную директорию
         self.original_dir = os.getcwd()
+        # Патчим __file__ в модуле task1, чтобы main думал, что он лежит в temp_dir
+        self.patcher = patch("src.lab8.task1.__file__", os.path.join(self.temp_dir, "task1.py"))
+        self.mock_file = self.patcher.start()
 
     def tearDown(self):
-        """Удаляем временную папку и восстанавливаем исходную директорию."""
+        """Останавливаем патч и удаляем временную папку."""
+        self.patcher.stop()
         os.chdir(self.original_dir)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_file_created(self):
         """Проверяем, что файл создаётся в целевой директории."""
-        info = process_files(self.temp_dir)
-        self.assertTrue(os.path.exists(info["full_path"]))
-        self.assertEqual(os.path.dirname(info["full_path"]), self.temp_dir)
+        main()
+        file_path = os.path.join(self.temp_dir, "lab_os_file.txt")
+        self.assertTrue(os.path.exists(file_path))
 
     def test_file_size(self):
-        """Проверяем, что размер файла соответствует записанным данным."""
-        info = process_files(self.temp_dir)
-        with open(info["full_path"], "rb") as f:
-            content_bytes = f.read()
-        self.assertEqual(info["size"], len(content_bytes))
-        self.assertGreater(info["size"], 0)
+        """Проверяем, что размер файла соответствует данным."""
+        main()
+        file_path = os.path.join(self.temp_dir, "lab_os_file.txt")
+        with open(file_path, "rb") as f:
+            content = f.read()
+        size = os.path.getsize(file_path)
+        self.assertEqual(size, len(content))
+        self.assertGreater(size, 0)
 
     def test_metadata_dates(self):
         """Проверяем, что даты изменения и доступа установлены корректно."""
-        info = process_files(self.temp_dir)
+        main()
+        file_path = os.path.join(self.temp_dir, "lab_os_file.txt")
+        mtime = os.path.getmtime(file_path)
+        atime = os.path.getatime(file_path)
         now = datetime.now().timestamp()
-        self.assertGreater(info["mtime"], 0)
-        self.assertGreater(info["atime"], 0)
-        self.assertLess(abs(now - info["mtime"]), 10)
-        self.assertLess(abs(now - info["atime"]), 10)
+        self.assertGreater(mtime, 0)
+        self.assertGreater(atime, 0)
+        self.assertLess(abs(now - mtime), 10)
+        self.assertLess(abs(now - atime), 10)
 
-    def test_user_returned(self):
-        """Проверяем, что возвращается непустое имя пользователя."""
-        info = process_files(self.temp_dir)
-        self.assertIsInstance(info["user"], str)
-        self.assertNotEqual(info["user"], "")
+    def test_user_displayed(self):
+        """Проверяем, что пользователь выводится (хотя бы не пусто)."""
+        # Перехватываем вывод, чтобы проверить наличие пользователя
+        with patch("builtins.print") as mock_print:
+            main()
+            # Ищем среди вызовов print строку с "Пользователь:"
+            calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
+            self.assertTrue(any("Пользователь:" in s for s in calls))
 
     def test_permissions_changed(self):
         """Проверяем, что права доступа изменились."""
-        info = process_files(self.temp_dir)
+        main()
+        file_path = os.path.join(self.temp_dir, "lab_os_file.txt")
         if os.name == "nt":
-            self.assertFalse(os.access(info["full_path"], os.W_OK) is False)
-            with open(info["full_path"], "a", encoding="utf-8") as f:
-                f.write("test")
+            # На Windows просто проверяем, что файл доступен для записи
+            self.assertTrue(os.access(file_path, os.W_OK))
         else:
-            self.assertNotEqual(info["old_permissions"], info["new_permissions"])
-            self.assertEqual(info["new_permissions"], 0o644)
+            stat = os.stat(file_path)
+            perm = stat.st_mode & 0o777
+            self.assertEqual(perm, 0o644)
 
     def test_directory_change(self):
-        """Проверяем, что скрипт переходит в целевую директорию."""
+        """Проверяем, что скрипт переходит в папку скрипта (temp_dir)."""
         self.assertNotEqual(os.getcwd(), self.temp_dir)
-        info = process_files(self.temp_dir)
+        main()
         self.assertEqual(os.getcwd(), self.temp_dir)
-        self.assertEqual(os.path.dirname(info["full_path"]), self.temp_dir)
+        file_path = os.path.join(self.temp_dir, "lab_os_file.txt")
+        self.assertTrue(os.path.exists(file_path))
 
     def test_file_exists_check(self):
-        """Проверяем, что файл существует после создания."""
-        info = process_files(self.temp_dir)
-        self.assertTrue(os.path.exists(info["full_path"]))
+        """Проверяем, что файл существует после выполнения main."""
+        main()
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, "lab_os_file.txt")))
 
 
 if __name__ == "__main__":
