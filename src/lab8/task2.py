@@ -6,6 +6,7 @@
 import os
 import shutil
 from datetime import datetime
+from typing import Optional
 
 
 def ensure_original_file(base_dir: str) -> str:
@@ -19,10 +20,7 @@ def ensure_original_file(base_dir: str) -> str:
 
 
 def copy_and_move_copy(original: str, base_dir: str) -> tuple[str, str]:
-    """
-    Копирует исходный файл, создаёт вложенные папки,
-    перемещает копию и переименовывает её.
-    """
+    """Копирует исходный файл, создаёт вложенные папки, перемещает копию и переименовывает её."""
     copy_path = os.path.join(base_dir, "lab_os_file_copy.txt")
     shutil.copy2(original, copy_path)
     print(f"Создана копия: {copy_path}")
@@ -41,7 +39,7 @@ def create_and_move_new_file(base_dir: str, nested_dir: str) -> str:
     with open(new_file, "w", encoding="utf-8") as f:
         f.write("Содержимое нового файла.\n")
     renamed_moved = os.path.join(nested_dir, "renamed_new.txt")
-    shutil.move(new_file, renamed_moved)
+    os.rename(new_file, renamed_moved)
     print(f"Новый файл перемещён и переименован в: {renamed_moved}")
     return renamed_moved
 
@@ -79,7 +77,7 @@ def print_directory_contents(directory: str, label: str = ""):
         print(f"  {item}")
 
 
-def process_directories(target_dir: str = None) -> dict:
+def process_directories(target_dir: Optional[str] = None) -> dict:
     """Выполняет все операции задания 2."""
     if target_dir is None:
         target_dir = os.path.dirname(os.path.abspath(__file__))
@@ -113,7 +111,7 @@ def process_directories(target_dir: str = None) -> dict:
 
     deep_dir, deep_file, shallow_file = create_nested_structure(target_dir)
 
-    print("\n=== Обход дерева каталогов ===")
+    print("\nОбход дерева каталогов")
     for root, dirs, files in os.walk(target_dir):
         dirs[:] = [d for d in dirs if not d.startswith("__")]
         print(f"Папка: {root}")
@@ -137,7 +135,7 @@ def process_directories(target_dir: str = None) -> dict:
 
 def main():
     """Демонстрация работы скрипта."""
-    print("=== Задание 2: работа с директориями ===\n")
+    print("Задание 2: работа с директориями\n")
     process_directories()
     print("\nОперации завершены.")
 
