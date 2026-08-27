@@ -1,98 +1,144 @@
-"""Скрипт для управления системными процессами и переменными окружения."""
+"""Скрипт для управления системными процессами."""
 
 import os
 import platform
+import subprocess
 
-import psutil
-from psutil import AccessDenied, NoSuchProcess, TimeoutExpired, ZombieProcess
+
+def _run_cmd(cmd, check=False):
+    """Выполняет команду и возвращает stdout."""
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, shell=True, encoding="oem", check=check
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, OSError, ValueError):
+        return ""
 
 
 def list_processes():
-    """Возвращает список всех процессов с PID и именем."""
-    return [p.info for p in psutil.process_iter(["pid", "name"]) if p.info]
+    """Возвращает список (pid, name)."""
+    output = _run_cmd("tasklist /FO CSV /NH")
+    processes = []
+    for line in output.splitlines():
+        parts = line.strip('"').split('","')
+        if len(parts) >= 2:
+            try:
+                processes.append((int(parts[1]), parts[0]))
+            except ValueError:
+                continue
+    return processes
 
 
 def get_process_info(pid):
-    """Возвращает детальную информацию о процессе."""
-    p = psutil.Process(pid)
-    mem = p.memory_info()
-    return {
-        "pid": pid,
-        "name": p.name(),
-        "status": p.status(),
-        "username": p.username(),
-        "cpu_percent": p.cpu_percent(interval=0.1),
-        "memory_mb": mem.rss // (1024 * 1024),
-        "cmdline": " ".join(p.cmdline()),
-        "num_threads": p.num_threads(),
-        "nice": p.nice() if hasattr(p, "nice") else None,
-    }
+    """Возвращает словарь с информацией о процессе."""
+    info = {"pid": pid}
+    cmd = (
+        f"wmic process where ProcessId={pid} get "
+        f"Name,Status,CommandLine,ThreadCount,WorkingSetSize /FORMAT:CSV"
+    )
+    output = _run_cmd(cmd)
+    if output:
+        lines = output.splitlines()
+        if len(lines) >= 2:
+            parts = lines[1].strip('"').split('","')
+            if len(parts) >= 5:
+                info["name"] = parts[0]
+                info["status"] = parts[1]
+                info["cmdline"] = parts[2]
+                info["num_threads"] = int(parts[3]) if parts[3].isdigit() else 0
+                mem_bytes = int(parts[4]) if parts[4].isdigit() else 0
+                info["memory_mb"] = mem_bytes // (1024 * 1024)
+    info.setdefault("username", "N/A")
+    info.setdefault("cpu_percent", 0.0)
+    info.setdefault("nice", None)
+    return info
 
 
 def kill_process(pid):
     """Завершает процесс."""
-    p = psutil.Process(pid)
-    p.terminate()
-    try:
-        p.wait(timeout=3)
-    except TimeoutExpired:
-        p.kill()
-    return True
-
-
-def show_env_vars():
-    """Возвращает переменные окружения."""
-    return dict(os.environ)
-
-
-def add_env_var(key, value):
-    """Добавляет переменную окружения."""
-    os.environ[key] = value
+    _run_cmd(f"taskkill /PID {pid} /F", check=True)
 
 
 def set_process_priority(pid, priority):
-    """Устанавливает приоритет (nice) процесса."""
-    p = psutil.Process(pid)
-    try:
-        p.nice(priority)
-    except (ValueError, TypeError) as e:
-        raise ValueError(f"Некорректное значение приоритета: {e}") from e
-    return True
+    """Устанавливает приоритет."""
+    if priority <= -5:
+        win_priority = 0
+    elif priority <= 5:
+        win_priority = 2
+    elif priority <= 15:
+        win_priority = 3
+    else:
+        win_priority = 4
+    _run_cmd(f"wmic process where ProcessId={pid} call setpriority {win_priority}", check=True)
 
 
 def system_info():
-    """Возвращает информацию о системе."""
+    """Возвращает информацию о системе (память, диск, swap)."""
     info = {
         "system": platform.system(),
         "release": platform.release(),
         "processor": platform.processor(),
-        "cpu_count": psutil.cpu_count(),
-        "memory": psutil.virtual_memory()._asdict(),
-        "disk": None,
-        "swap": None,
+        "cpu_count": os.cpu_count(),
+        "memory": {},
+        "disk": {},
+        "swap": {},
     }
-    try:
-        if os.name == "nt":
-            drive = os.path.splitdrive(os.path.abspath(__file__))[0] + "\\"
-            usage = psutil.disk_usage(drive)
-        else:
-            usage = psutil.disk_usage("/")
-        info["disk"] = usage._asdict()
-    except (PermissionError, OSError):
-        pass
-    try:
-        info["swap"] = psutil.swap_memory()._asdict()
-    except (RuntimeError, OSError):
-        pass
+    output = _run_cmd("wmic os get TotalVisibleMemorySize,FreePhysicalMemory /FORMAT:CSV")
+    if output:
+        lines = output.splitlines()
+        if len(lines) >= 2:
+            parts = lines[1].strip('"').split('","')
+            if len(parts) >= 2:
+                total_kb = int(parts[0]) if parts[0].isdigit() else 0
+                free_kb = int(parts[1]) if parts[1].isdigit() else 0
+                if total_kb:
+                    info["memory"] = {
+                        "total": total_kb * 1024,
+                        "available": free_kb * 1024,
+                        "percent": 100 - (free_kb / total_kb * 100),
+                    }
+    drive = os.path.splitdrive(os.path.abspath(__file__))[0] + "\\"
+    cmd = f"wmic logicaldisk where DeviceID='{drive}' get Size,FreeSpace /FORMAT:CSV"
+    output = _run_cmd(cmd)
+    if output:
+        lines = output.splitlines()
+        if len(lines) >= 2:
+            parts = lines[1].strip('"').split('","')
+            if len(parts) >= 2:
+                total = int(parts[0]) if parts[0].isdigit() else 0
+                free = int(parts[1]) if parts[1].isdigit() else 0
+                if total:
+                    info["disk"] = {
+                        "total": total,
+                        "free": free,
+                        "percent": (1 - free / total) * 100,
+                    }
+    output = _run_cmd("wmic pagefile get AllocatedBaseSize,CurrentUsage /FORMAT:CSV")
+    if output:
+        lines = output.splitlines()
+        if len(lines) >= 2:
+            parts = lines[1].strip('"').split('","')
+            if len(parts) >= 2:
+                total_mb = int(parts[0]) if parts[0].isdigit() else 0
+                used_mb = int(parts[1]) if parts[1].isdigit() else 0
+                if total_mb:
+                    info["swap"] = {
+                        "total": total_mb * 1024 * 1024,
+                        "used": used_mb * 1024 * 1024,
+                        "percent": (used_mb / total_mb) * 100,
+                    }
     return info
 
 
 def _show_processes():
-    for p in list_processes():
-        print(f"{p['pid']:5} {p['name']}")
+    """Выводит список процессов."""
+    for pid, name in list_processes():
+        print(f"{pid:5} {name}")
 
 
 def _show_process_info():
+    """Запрашивает PID и выводит детальную информацию."""
     try:
         pid = int(input("PID: "))
         info = get_process_info(pid)
@@ -100,93 +146,76 @@ def _show_process_info():
             print(f"{k}: {v}")
     except ValueError:
         print("Ошибка: введите число.")
-    except NoSuchProcess:
-        print("Процесс не найден.")
-    except AccessDenied:
-        print("Нет доступа.")
-    except (OSError, TypeError) as e:
-        print(f"Ошибка получения информации: {e}")
+    except (OSError, subprocess.CalledProcessError, KeyError) as e:
+        print(f"Ошибка: {e}")
 
 
 def _kill_process_interactive():
+    """Запрашивает PID и завершает процесс."""
     try:
         pid = int(input("PID: "))
         kill_process(pid)
         print(f"Процесс {pid} завершён.")
     except ValueError:
         print("Ошибка: введите число.")
-    except ZombieProcess:
-        print("Процесс является зомби и не может быть завершён.")
-    except NoSuchProcess:
-        print("Процесс не найден.")
-    except AccessDenied:
-        print("Недостаточно прав.")
-    except TimeoutExpired:
-        print("Процесс не завершился, принудительно убит.")
-    except OSError as e:
-        print(f"Ошибка завершения: {e}")
-
-
-def _show_env_interactive():
-    print("\nТекущие переменные:")
-    for k, v in sorted(show_env_vars().items()):
-        print(f"{k}={v}")
-    add = input("Добавить/изменить? (y/n): ").lower()
-    if add == "y":
-        key = input("Имя: ").strip()
-        if key:
-            val = input("Значение: ").strip()
-            add_env_var(key, val)
-            print(f"Переменная {key} установлена.")
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"Не удалось завершить: {e}")
 
 
 def _set_priority_interactive():
+    """Запрашивает PID и новое значение nice, меняет приоритет."""
     try:
         pid = int(input("PID: "))
         priority = int(input("nice (-20..19): "))
         set_process_priority(pid, priority)
-        print(f"Приоритет {pid} изменён на {priority}.")
-    except ValueError as e:
-        print(f"Ошибка ввода: {e}")
-    except ZombieProcess:
-        print("Процесс является зомби, приоритет изменить нельзя.")
-    except NoSuchProcess:
-        print("Процесс не найден.")
-    except AccessDenied:
-        print("Недостаточно прав для изменения приоритета.")
-    except (OSError, TypeError) as e:
-        print(f"Ошибка изменения приоритета: {e}")
+        print(f"Приоритет {pid} изменён.")
+    except ValueError:
+        print("Ошибка ввода.")
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"Ошибка: {e}")
+
+
+def _show_env_interactive():
+    """Показывает переменные окружения и позволяет добавить новую."""
+    for k, v in sorted(os.environ.items()):
+        print(f"{k}={v}")
+    add = input("Добавить/изменить? (y/n): ").strip().lower()
+    if add == "y":
+        key = input("Имя: ").strip()
+        if key:
+            val = input("Значение: ").strip()
+            os.environ[key] = val
+            print(f"Переменная {key} установлена.")
 
 
 def _show_system_info_interactive():
+    """Выводит информацию о системе (ОС, память, диск, swap)."""
     info = system_info()
     print(f"\nОС: {info['system']} {info['release']}")
-    if info["processor"]:
-        print(f"Процессор: {info['processor']}")
+    print(f"Процессор: {info['processor']}")
     print(f"Ядра: {info['cpu_count']}")
-    mem = info["memory"]
-    print(
-        f"Память: всего {mem['total'] // (1024 ** 3)} ГБ, "
-        f"доступно {mem['available'] // (1024 ** 3)} ГБ ({mem['percent']}% использовано)"
-    )
-
-    disk_info = info.get("disk")
-    if disk_info is not None:
+    mem = info.get("memory", {})
+    if mem:
         print(
-            f"Диск: всего {disk_info['total'] // (1024 ** 3)} ГБ, "
-            f"свободно {disk_info['free'] // (1024 ** 3)} ГБ ({disk_info['percent']}% занято)"
+            f"Память: всего {mem['total'] // (1024 ** 3)} ГБ, "
+            f"доступно {mem['available'] // (1024 ** 3)} ГБ ({mem['percent']:.1f}%)"
         )
-
-    swap_info = info.get("swap")
-    if swap_info is not None:
+    disk = info.get("disk", {})
+    if disk:
         print(
-            f"Swap: {swap_info['used'] // (1024 ** 3)} ГБ из "
-            f"{swap_info['total'] // (1024 ** 3)} ГБ ({swap_info['percent']}%)"
+            f"Диск: всего {disk['total'] // (1024 ** 3)} ГБ, "
+            f"свободно {disk['free'] // (1024 ** 3)} ГБ ({disk['percent']:.1f}%)"
+        )
+    swap = info.get("swap", {})
+    if swap:
+        print(
+            f"Swap: {swap['used'] // (1024 ** 3)} ГБ из "
+            f"{swap['total'] // (1024 ** 3)} ГБ ({swap['percent']:.1f}%)"
         )
 
 
 def main():
-    """Интерактивное меню."""
+    """Главное меню программы."""
     menu = {
         "a": _show_processes,
         "b": _show_process_info,
@@ -196,7 +225,7 @@ def main():
         "f": _show_system_info_interactive,
     }
     while True:
-        print("СИСТЕМНЫЙ МЕНЕДЖЕР")
+        print("Системный менеджер")
         print("a) Список процессов")
         print("b) Информация о процессе")
         print("c) Завершить процесс")
