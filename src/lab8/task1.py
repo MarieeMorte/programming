@@ -58,7 +58,7 @@ def process_files(target_dir: str = None) -> dict:
 
 def main():
     """Демонстрация работы скрипта."""
-    print("=== Работа с библиотекой os ===")
+    print("Работа с библиотекой os")
     info = process_files()
     print(f"Файл: {info['filename']}")
     print(f"Размер: {info['size']} байт")
