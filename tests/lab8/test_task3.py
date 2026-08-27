@@ -98,9 +98,11 @@ class TestProcessFunctions(unittest.TestCase):
 class TestSystemInfo(unittest.TestCase):
     """Тесты для системной информации."""
 
+    @patch("src.lab8.task3.platform.system")
     @patch("src.lab8.task3._run_cmd")
-    def test_system_info(self, mock_run_cmd):
+    def test_system_info(self, mock_run_cmd, mock_platform):
         """Проверяем сбор информации через wmic."""
+        mock_platform.return_value = "Windows"
         mock_run_cmd.side_effect = [
             '"TotalVisibleMemorySize","FreePhysicalMemory"\n"8388608","4194304"',
             '"Size","FreeSpace"\n"107374182400","53687091200"',
