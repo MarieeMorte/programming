@@ -1,4 +1,4 @@
-"""Unit-тесты для задания 3 (управление процессами и окружением)."""
+"""Unit-тесты для задания 3 (упрощённая версия)."""
 
 import os
 import unittest
@@ -30,19 +30,14 @@ class TestProcessFunctions(unittest.TestCase):
 
     @patch("psutil.Process")
     def test_get_process_info_success(self, mock_process):
-        """Проверяем получение информации о процессе."""
+        """Проверяем получение информации о процессе (упрощённый набор полей)."""
         mock_instance = MagicMock()
         mock_instance.name.return_value = "test_proc"
-        mock_instance.exe.return_value = "/usr/bin/test"
-        mock_instance.cmdline.return_value = ["test", "--arg"]
         mock_instance.status.return_value = "running"
         mock_instance.username.return_value = "user"
-        mock_instance.create_time.return_value = 1234567890.0
         mock_instance.cpu_percent.return_value = 5.0
-        mock_instance.memory_info.return_value = MagicMock(
-            _asdict=lambda: {"rss": 1024, "vms": 2048}
-        )
-        mock_instance.connections.return_value = []
+        mock_instance.memory_info.return_value.rss = 100 * 1024 * 1024  # 100 МБ
+        mock_instance.cmdline.return_value = ["test", "--arg"]
         mock_instance.num_threads.return_value = 1
         mock_instance.nice.return_value = 0
         mock_process.return_value = mock_instance
@@ -50,6 +45,12 @@ class TestProcessFunctions(unittest.TestCase):
         info = get_process_info(1234)
         self.assertEqual(info["pid"], 1234)
         self.assertEqual(info["name"], "test_proc")
+        self.assertEqual(info["status"], "running")
+        self.assertEqual(info["username"], "user")
+        self.assertEqual(info["cpu_percent"], 5.0)
+        self.assertEqual(info["memory_mb"], 100)
+        self.assertEqual(info["cmdline"], "test --arg")
+        self.assertEqual(info["num_threads"], 1)
         self.assertEqual(info["nice"], 0)
 
     @patch("psutil.Process")
@@ -88,7 +89,7 @@ class TestEnvFunctions(unittest.TestCase):
         """Проверяем, что возвращается словарь."""
         env = show_env_vars()
         self.assertIsInstance(env, dict)
-        self.assertIn("PATH", env)  # обычно есть
+        self.assertIn("PATH", env)
 
     def test_add_env_var(self):
         """Проверяем добавление/изменение переменной."""
@@ -96,7 +97,6 @@ class TestEnvFunctions(unittest.TestCase):
         value = "test_value"
         add_env_var(key, value)
         self.assertEqual(os.environ.get(key), value)
-        # Очистим после теста
         del os.environ[key]
 
 
@@ -121,8 +121,10 @@ class TestSystemInfo(unittest.TestCase):
         info = system_info()
         self.assertIsInstance(info, dict)
         self.assertIn("system", info)
-        self.assertIn("cpu_count_logical", info)
+        self.assertIn("cpu_count", info)  # теперь ожидаем cpu_count
         self.assertIn("memory", info)
+        self.assertIn("disk", info)
+        self.assertIn("swap", info)
 
 
 if __name__ == "__main__":
