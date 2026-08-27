@@ -12,17 +12,19 @@ def main():
         print(f"Перешли в {os.getcwd()}")
 
     filename = "lab_os_file.txt"
+    filepath = os.path.join(script_dir, filename)
+
     data = f"Тестовые данные. Время: {datetime.now()}\nВторая строка."
 
-    with open(filename, "w", encoding="utf-8") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(data)
 
-    if not os.path.exists(filename):
+    if not os.path.exists(filepath):
         raise RuntimeError("Файл не создан")
 
-    print(f"Размер: {os.path.getsize(filename)} байт")
-    print(f"Изменён: {datetime.fromtimestamp(os.path.getmtime(filename))}")
-    print(f"Доступ: {datetime.fromtimestamp(os.path.getatime(filename))}")
+    print(f"Размер: {os.path.getsize(filepath)} байт")
+    print(f"Изменён: {datetime.fromtimestamp(os.path.getmtime(filepath))}")
+    print(f"Доступ: {datetime.fromtimestamp(os.path.getatime(filepath))}")
 
     try:
         user = os.getlogin()
@@ -30,11 +32,15 @@ def main():
         user = os.environ.get("USER") or os.environ.get("USERNAME") or "неизвестно"
     print(f"Пользователь: {user}")
 
-    old_perm = os.stat(filename).st_mode & 0o777
+    old_perm = os.stat(filepath).st_mode & 0o777
     print(f"Старые права: {oct(old_perm)}")
-    os.chmod(filename, 0o644)
-    new_perm = os.stat(filename).st_mode & 0o777
-    print(f"Новые права: {oct(new_perm)}")
+
+    try:
+        os.chmod(filepath, 0o644)
+        new_perm = os.stat(filepath).st_mode & 0o777
+        print(f"Новые права: {oct(new_perm)}")
+    except PermissionError as e:
+        print(f"Не удалось сменить права: {e}")
 
 
 if __name__ == "__main__":
