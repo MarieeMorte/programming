@@ -4,7 +4,7 @@ import os
 import platform
 
 import psutil
-from psutil import AccessDenied, NoSuchProcess, TimeoutExpired
+from psutil import AccessDenied, NoSuchProcess, TimeoutExpired, ZombieProcess
 
 
 def list_processes():
@@ -51,9 +51,12 @@ def add_env_var(key, value):
 
 
 def set_process_priority(pid, priority):
-    """Устанавливает приоритет nice."""
+    """Устанавливает приоритет (nice) процесса."""
     p = psutil.Process(pid)
-    p.nice(priority)
+    try:
+        p.nice(priority)
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Некорректное значение приоритета: {e}") from e
     return True
 
 
@@ -101,8 +104,8 @@ def _show_process_info():
         print("Процесс не найден.")
     except AccessDenied:
         print("Нет доступа.")
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"Ошибка: {e}")
+    except (OSError, TypeError) as e:
+        print(f"Ошибка получения информации: {e}")
 
 
 def _kill_process_interactive():
@@ -112,12 +115,16 @@ def _kill_process_interactive():
         print(f"Процесс {pid} завершён.")
     except ValueError:
         print("Ошибка: введите число.")
+    except ZombieProcess:
+        print("Процесс является зомби и не может быть завершён.")
     except NoSuchProcess:
         print("Процесс не найден.")
     except AccessDenied:
         print("Недостаточно прав.")
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"Ошибка: {e}")
+    except TimeoutExpired:
+        print("Процесс не завершился, принудительно убит.")
+    except OSError as e:
+        print(f"Ошибка завершения: {e}")
 
 
 def _show_env_interactive():
@@ -139,14 +146,16 @@ def _set_priority_interactive():
         priority = int(input("nice (-20..19): "))
         set_process_priority(pid, priority)
         print(f"Приоритет {pid} изменён на {priority}.")
-    except ValueError:
-        print("Ошибка: введите число.")
+    except ValueError as e:
+        print(f"Ошибка ввода: {e}")
+    except ZombieProcess:
+        print("Процесс является зомби, приоритет изменить нельзя.")
     except NoSuchProcess:
         print("Процесс не найден.")
     except AccessDenied:
-        print("Недостаточно прав.")
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"Ошибка: {e}")
+        print("Недостаточно прав для изменения приоритета.")
+    except (OSError, TypeError) as e:
+        print(f"Ошибка изменения приоритета: {e}")
 
 
 def _show_system_info_interactive():
@@ -160,19 +169,19 @@ def _show_system_info_interactive():
         f"Память: всего {mem['total'] // (1024 ** 3)} ГБ, "
         f"доступно {mem['available'] // (1024 ** 3)} ГБ ({mem['percent']}% использовано)"
     )
-    if info["disk"] is not None:
-        disk = info["disk"]
-        # pylint: disable=unsubscriptable-object
+
+    disk_info = info.get("disk")
+    if disk_info is not None:
         print(
-            f"Диск: всего {disk['total'] // (1024 ** 3)} ГБ, "
-            f"свободно {disk['free'] // (1024 ** 3)} ГБ ({disk['percent']}% занято)"
+            f"Диск: всего {disk_info['total'] // (1024 ** 3)} ГБ, "
+            f"свободно {disk_info['free'] // (1024 ** 3)} ГБ ({disk_info['percent']}% занято)"
         )
-    if info["swap"] is not None:
-        swap = info["swap"]
-        # pylint: disable=unsubscriptable-object
+
+    swap_info = info.get("swap")
+    if swap_info is not None:
         print(
-            f"Swap: {swap['used'] // (1024 ** 3)} ГБ из "
-            f"{swap['total'] // (1024 ** 3)} ГБ ({swap['percent']}%)"
+            f"Swap: {swap_info['used'] // (1024 ** 3)} ГБ из "
+            f"{swap_info['total'] // (1024 ** 3)} ГБ ({swap_info['percent']}%)"
         )
 
 
