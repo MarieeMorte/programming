@@ -196,9 +196,7 @@ def main():
         "f": _show_system_info_interactive,
     }
     while True:
-        print("\n" + "=" * 40)
         print("СИСТЕМНЫЙ МЕНЕДЖЕР")
-        print("=" * 40)
         print("a) Список процессов")
         print("b) Информация о процессе")
         print("c) Завершить процесс")
