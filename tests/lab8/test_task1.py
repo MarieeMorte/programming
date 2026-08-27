@@ -4,7 +4,7 @@ import os
 import shutil
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from src.lab8.task1 import (
     change_file_permissions,
@@ -20,11 +20,13 @@ class TestTask1Functions(unittest.TestCase):
     """Тесты для отдельных функций task1.py."""
 
     def setUp(self):
-        """Создаём временную директорию для тестов."""
+        """Создаём временную директорию и файл для тестов."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_dir = os.getcwd()
         os.chdir(self.temp_dir)
         self.filepath = os.path.join(self.temp_dir, "lab_os_file.txt")
+        with open(self.filepath, "w", encoding="utf-8") as f:
+            f.write("dummy content")
 
     def tearDown(self):
         """Возвращаемся в исходную директорию и удаляем временную."""
@@ -48,6 +50,7 @@ class TestTask1Functions(unittest.TestCase):
 
     def test_create_file_with_data_success(self):
         """Файл создаётся и содержит данные."""
+        os.remove(self.filepath)
         create_file_with_data(self.filepath)
         self.assertTrue(os.path.exists(self.filepath))
         with open(self.filepath, "r", encoding="utf-8") as f:
@@ -84,18 +87,19 @@ class TestTask1Functions(unittest.TestCase):
     def test_print_current_user_fallback(self):
         """Если os.getlogin падает, используется переменная окружения."""
         with patch("os.getlogin", side_effect=OSError("no login")):
-            with patch(
-                    "os.environ.get",
-                    side_effect=lambda k, d: "fallbackuser" if k in ("USER", "USERNAME") else d,
-            ):
+
+            def env_get_side_effect(key, default=None):
+                if key in ("USER", "USERNAME"):
+                    return "fallbackuser"
+                return default
+
+            with patch("os.environ.get", side_effect=env_get_side_effect):
                 with patch("builtins.print") as mock_print:
                     print_current_user()
                     mock_print.assert_called_once_with("Пользователь: fallbackuser")
 
     def test_change_file_permissions_success(self):
         """Права успешно меняются на 0o644."""
-        with open(self.filepath, "w", encoding="utf-8") as f:
-            f.write("test")
         if os.name == "nt":
             with patch("os.chmod") as mock_chmod:
                 change_file_permissions(self.filepath)
@@ -112,11 +116,12 @@ class TestTask1Functions(unittest.TestCase):
 
     def test_change_file_permissions_permission_error(self):
         """Если прав недостаточно, выводится сообщение об ошибке."""
-        with patch("os.chmod", side_effect=PermissionError("Access denied")):
-            with patch("builtins.print") as mock_print:
-                change_file_permissions(self.filepath)
-                calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
-                self.assertTrue(any("Не удалось сменить права" in s for s in calls))
+        with patch("os.stat", return_value=MagicMock(st_mode=0o777)):
+            with patch("os.chmod", side_effect=PermissionError("Access denied")):
+                with patch("builtins.print") as mock_print:
+                    change_file_permissions(self.filepath)
+                    calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
+                    self.assertTrue(any("Не удалось сменить права" in s for s in calls))
 
     def test_main_integration(self):
         """Полный прогон main во временной директории."""
