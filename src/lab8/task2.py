@@ -1,4 +1,4 @@
-"""Модуль для работы с директориями (без shutil)."""
+"""Модуль для работы с директориями."""
 
 import os
 from datetime import datetime
