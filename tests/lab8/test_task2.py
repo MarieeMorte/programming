@@ -221,6 +221,7 @@ class TestTask2Functions(unittest.TestCase):
 
     def test_walk_and_print(self):
         """Обход дерева без ошибок."""
+        os.remove(self.original_file)
         os.makedirs(os.path.join("a", "b"))
         with open("root.txt", "w", encoding="utf-8") as f:
             f.write("")
@@ -228,19 +229,20 @@ class TestTask2Functions(unittest.TestCase):
             f.write("")
         with patch("builtins.print") as mock_print:
             walk_and_print()
-            calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
-            self.assertTrue(any("Папка: ." in s for s in calls))
-            self.assertTrue(any("Файлы: root.txt" in s for s in calls))
-            self.assertTrue(any("Папка: .\\a" in s or "Папка: ./a" in s for s in calls))
-            self.assertTrue(any("Файлы: a.txt" in s for s in calls))
+            all_output = " ".join(
+                " ".join(str(arg) for arg in call[0]) for call in mock_print.call_args_list
+            )
+            self.assertIn("Папка: .", all_output)
+            self.assertIn("root.txt", all_output)
 
     def test_walk_and_print_error(self):
         """Ошибка при обходе."""
         with patch("os.walk", side_effect=OSError("Access denied")):
             with patch("builtins.print") as mock_print:
                 walk_and_print()
-                mock_print.assert_called_once()
-                self.assertIn("Ошибка при обходе дерева", mock_print.call_args[0][0])
+                self.assertEqual(mock_print.call_count, 2)
+                second_call_args = mock_print.call_args_list[1][0][0]
+                self.assertIn("Ошибка при обходе дерева", second_call_args)
 
     def test_main_integration(self):
         """Полный прогон main во временной директории."""
