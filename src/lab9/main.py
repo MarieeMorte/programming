@@ -1,6 +1,4 @@
-"""
-Демонстрация работы системы бронирования книг.
-"""
+"""Демонстрация работы системы бронирования книг."""
 
 import os
 
@@ -14,7 +12,9 @@ from .models import Base
 def main() -> None:
     """Создаёт базу данных, добавляет данные и демонстрирует операции."""
     db_path = os.path.join(os.path.dirname(__file__), "library.db")
-    engine = create_engine(f"sqlite:///{db_path}", echo=True)
+    engine = create_engine(f"sqlite:///{db_path}", echo=False)
+
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
 
     session_factory = sessionmaker(bind=engine)
