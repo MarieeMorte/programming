@@ -64,7 +64,7 @@ def get_user_bookings(session: Session, user_id: int) -> list[Booking]:
     user = session.get(User, user_id)
     if not user:
         raise ValueError(f"Пользователь с id {user_id} не найден.")
-    return user.bookings
+    return user.bookings # type: ignore
 
 
 def get_book_by_title(session: Session, title: str) -> Optional[Book]:
