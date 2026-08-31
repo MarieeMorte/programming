@@ -1,4 +1,4 @@
-"""Unit-тесты для задания 3 (версия с subprocess и /FORMAT:LIST)."""
+"""Unit-тесты для задания 3."""
 
 import os
 import unittest
