@@ -128,7 +128,6 @@ class TestProcessFunctions(unittest.TestCase):
         mock_run_cmd.assert_called_once_with(
             "wmic process where ProcessId=1234 call setpriority 2", check=True
         )
-        # Проверяем другой класс
         set_process_priority(5678, 0)
         mock_run_cmd.assert_called_with(
             "wmic process where ProcessId=5678 call setpriority 0", check=True
