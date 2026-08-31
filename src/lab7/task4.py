@@ -3,11 +3,14 @@
 import threading
 import time
 
+print_lock = threading.Lock()
+
 
 def print_message(message: str, delay: float) -> None:
     """Печатает сообщение после указанной задержки."""
     time.sleep(delay)
-    print(message)
+    with print_lock:
+        print(message)
 
 
 def run_sequential(messages: list[str], delay: float) -> float:
