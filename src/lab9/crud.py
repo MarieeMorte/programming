@@ -42,7 +42,7 @@ def create_booking(session: Session, user_id: int, book_id: int) -> Booking:
         raise ValueError(f"Нет доступных копий книги '{book.title}'.")
 
     booking = Booking(user_id=user_id, book_id=book_id, booking_date=date.today())
-    book.copies_available -= 1  # type: ignore
+    book.copies_available -= 1
     session.add(booking)
     session.commit()
     return booking
@@ -54,7 +54,7 @@ def cancel_booking(session: Session, booking_id: int) -> None:
     if not booking:
         raise ValueError(f"Бронирование с id {booking_id} не найдено.")
     book = booking.book
-    book.copies_available += 1  # type: ignore
+    book.copies_available += 1
     session.delete(booking)
     session.commit()
 
@@ -64,7 +64,7 @@ def get_user_bookings(session: Session, user_id: int) -> list[Booking]:
     user = session.get(User, user_id)
     if not user:
         raise ValueError(f"Пользователь с id {user_id} не найден.")
-    return user.bookings  # type: ignore
+    return user.bookings
 
 
 def get_book_by_title(session: Session, title: str) -> Optional[Book]:

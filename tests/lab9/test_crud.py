@@ -23,9 +23,9 @@ class TestLibraryCRUD(unittest.TestCase):
     def setUp(self) -> None:
         """Создаём временную in-memory базу и сессию."""
         self.engine = create_engine("sqlite:///:memory:")
-        Base.metadata.create_all(self.engine)  # type: ignore
-        self.session_factory = sessionmaker(bind=self.engine)
-        self.session = self.session_factory()
+        Base.metadata.create_all(self.engine)
+        session_factory = sessionmaker(bind=self.engine)
+        self.session = session_factory()
 
     def tearDown(self) -> None:
         """Закрываем сессию."""
@@ -51,10 +51,10 @@ class TestLibraryCRUD(unittest.TestCase):
         """Успешное создание бронирования и уменьшение копий."""
         user = add_user(self.session, "John", "john@example.com")
         book = add_book(self.session, "Dune", "Frank Herbert", copies=2)
-        booking = create_booking(self.session, user.id, book.id)  # type: ignore
+        booking = create_booking(self.session, user.id, book.id)
         self.assertIsInstance(booking, Booking)
-        self.assertEqual(booking.user_id, user.id)  # type: ignore
-        self.assertEqual(booking.book_id, book.id)  # type: ignore
+        self.assertEqual(booking.user_id, user.id)
+        self.assertEqual(booking.book_id, book.id)
         self.assertEqual(booking.booking_date, date.today())
         self.session.refresh(book)
         self.assertEqual(book.copies_available, 1)
@@ -64,31 +64,31 @@ class TestLibraryCRUD(unittest.TestCase):
         user = add_user(self.session, "Jane", "jane@example.com")
         book = add_book(self.session, "The Hobbit", "J.R.R. Tolkien", copies=0)
         with self.assertRaises(ValueError) as ctx:
-            create_booking(self.session, user.id, book.id)  # type: ignore
+            create_booking(self.session, user.id, book.id)
         self.assertIn("Нет доступных копий", str(ctx.exception))
 
     def test_create_booking_user_not_found(self) -> None:
         """Ошибка при несуществующем пользователе."""
         book = add_book(self.session, "The Hobbit", "J.R.R. Tolkien", copies=1)
         with self.assertRaises(ValueError) as ctx:
-            create_booking(self.session, 999, book.id)  # type: ignore
+            create_booking(self.session, 999, book.id)
         self.assertIn("не найден", str(ctx.exception))
 
     def test_create_booking_book_not_found(self) -> None:
         """Ошибка при несуществующей книге."""
         user = add_user(self.session, "Jane", "jane@example.com")
         with self.assertRaises(ValueError) as ctx:
-            create_booking(self.session, user.id, 999)  # type: ignore
+            create_booking(self.session, user.id, 999)
         self.assertIn("не найдена", str(ctx.exception))
 
     def test_cancel_booking_success(self) -> None:
         """Отмена бронирования и увеличение копий."""
         user = add_user(self.session, "Alice", "alice@example.com")
         book = add_book(self.session, "Brave New World", "Aldous Huxley", copies=1)
-        booking = create_booking(self.session, user.id, book.id)  # type: ignore
-        booking_id = booking.id  # type: ignore
-        cancel_booking(self.session, booking_id)  # type: ignore
-        self.assertIsNone(self.session.get(Booking, booking_id))  # type: ignore
+        booking = create_booking(self.session, user.id, book.id)
+        booking_id = booking.id
+        cancel_booking(self.session, booking_id)
+        self.assertIsNone(self.session.get(Booking, booking_id))
         self.session.refresh(book)
         self.assertEqual(book.copies_available, 1)
 
@@ -103,10 +103,10 @@ class TestLibraryCRUD(unittest.TestCase):
         user = add_user(self.session, "Bob", "bob@example.com")
         book1 = add_book(self.session, "Book1", "Author1", copies=2)
         book2 = add_book(self.session, "Book2", "Author2", copies=2)
-        booking1 = create_booking(self.session, user.id, book1.id)  # type: ignore
-        booking2 = create_booking(self.session, user.id, book2.id)  # type: ignore
+        booking1 = create_booking(self.session, user.id, book1.id)
+        booking2 = create_booking(self.session, user.id, book2.id)
 
-        bookings = get_user_bookings(self.session, user.id)  # type: ignore
+        bookings = get_user_bookings(self.session, user.id)
         self.assertEqual(len(bookings), 2)
         self.assertIn(booking1, bookings)
         self.assertIn(booking2, bookings)
@@ -116,8 +116,8 @@ class TestLibraryCRUD(unittest.TestCase):
         add_book(self.session, "Clean Code", "Robert C. Martin", copies=3)
         book = get_book_by_title(self.session, "Clean Code")
         self.assertIsNotNone(book)
-        if book:  # для mypy
-            self.assertEqual(book.author, "Robert C. Martin")
+        assert book is not None
+        self.assertEqual(book.author, "Robert C. Martin")
         self.assertIsNone(get_book_by_title(self.session, "Nonexistent"))
 
 

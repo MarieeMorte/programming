@@ -2,43 +2,46 @@
 # pylint: disable=too-few-public-methods
 
 from datetime import date
+from typing import List
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, String
-from sqlalchemy.orm import declarative_base, relationship
-
-Base = declarative_base()
+from sqlalchemy import Date, ForeignKey, Integer, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
-class User(Base):  # type: ignore
+class Base(DeclarativeBase):
+    """Базовый класс для всех моделей SQLAlchemy."""
+
+
+class User(Base):
     """Модель пользователя библиотеки."""
 
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
-    bookings = relationship(
+    bookings: Mapped[List["Booking"]] = relationship(
         "Booking", back_populates="user", cascade="all, delete-orphan"
-    )  # type: ignore
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>"
 
 
-class Book(Base):  # type: ignore
+class Book(Base):
     """Модель книги."""
 
     __tablename__ = "books"
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    author = Column(String, nullable=False)
-    copies_available = Column(Integer, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    author: Mapped[str] = mapped_column(String, nullable=False)
+    copies_available: Mapped[int] = mapped_column(Integer, default=0)
 
-    bookings = relationship(
+    bookings: Mapped[List["Booking"]] = relationship(
         "Booking", back_populates="book", cascade="all, delete-orphan"
-    )  # type: ignore
+    )
 
     def __repr__(self) -> str:
         return (
@@ -47,18 +50,18 @@ class Book(Base):  # type: ignore
         )
 
 
-class Booking(Base):  # type: ignore
+class Booking(Base):
     """Модель бронирования книги пользователем."""
 
     __tablename__ = "bookings"
 
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
-    booking_date = Column(Date, default=date.today)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id"), nullable=False)
+    booking_date: Mapped[date] = mapped_column(Date, default=date.today)
 
-    user = relationship("User", back_populates="bookings")  # type: ignore
-    book = relationship("Book", back_populates="bookings")  # type: ignore
+    user: Mapped["User"] = relationship("User", back_populates="bookings")
+    book: Mapped["Book"] = relationship("Book", back_populates="bookings")
 
     def __repr__(self) -> str:
         return (

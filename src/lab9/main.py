@@ -1,4 +1,6 @@
-"""Демонстрация работы системы бронирования книг."""
+"""
+Демонстрация работы системы бронирования книг.
+"""
 
 import os
 
@@ -13,7 +15,7 @@ def main() -> None:
     """Создаёт базу данных, добавляет данные и демонстрирует операции."""
     db_path = os.path.join(os.path.dirname(__file__), "library.db")
     engine = create_engine(f"sqlite:///{db_path}", echo=True)
-    Base.metadata.create_all(engine)  # type: ignore
+    Base.metadata.create_all(engine)
 
     session_factory = sessionmaker(bind=engine)
     session = session_factory()
@@ -27,17 +29,17 @@ def main() -> None:
         book2 = add_book(session, "Преступление и наказание", "Фёдор Достоевский", copies=1)
         print(f"Добавлены книги: {book1}, {book2}")
 
-        booking1 = create_booking(session, user1.id, book1.id)  # type: ignore
+        booking1 = create_booking(session, user1.id, book1.id)
         print(f"Создано бронирование: {booking1}")
-        booking2 = create_booking(session, user2.id, book1.id)  # type: ignore
+        booking2 = create_booking(session, user2.id, book1.id)
         print(f"Создано бронирование: {booking2}")
 
         try:
-            create_booking(session, user1.id, book2.id)  # type: ignore
+            create_booking(session, user1.id, book2.id)
         except ValueError as e:
             print(f"Ожидаемая ошибка: {e}")
 
-        cancel_booking(session, booking1.id)  # type: ignore
+        cancel_booking(session, booking1.id)
         print(f"Отменено бронирование {booking1.id}")
 
         session.refresh(book1)
