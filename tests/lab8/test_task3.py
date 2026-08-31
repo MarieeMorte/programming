@@ -38,7 +38,7 @@ class TestChangeDirectory(unittest.TestCase):
     @patch("src.lab8.task3.os.path.abspath")
     @patch("src.lab8.task3.__file__", "C:\\same\\task3.py")
     def test_change_to_script_directory_already_there(
-            self, mock_abspath, mock_dirname, mock_chdir, mock_getcwd
+        self, mock_abspath, mock_dirname, mock_chdir, mock_getcwd
     ):
         """Если уже в нужной директории, переход не происходит."""
         mock_abspath.return_value = "C:\\same\\task3.py"
@@ -123,14 +123,18 @@ class TestProcessFunctions(unittest.TestCase):
 
     @patch("src.lab8.task3._run_cmd")
     def test_set_process_priority_valid_class(self, mock_run_cmd):
-        """Проверяем вызов с корректным классом приоритета (0-4)."""
+        """Проверяем вызов с корректным классом (0-4)."""
         set_process_priority(1234, 2)
         mock_run_cmd.assert_called_once_with(
-            "wmic process where ProcessId=1234 call setpriority 2", check=True
+            'powershell -Command "(Get-Process -Id 1234).PriorityClass = '
+            '[System.Diagnostics.ProcessPriorityClass]::Normal"',
+            check=True,
         )
         set_process_priority(5678, 0)
         mock_run_cmd.assert_called_with(
-            "wmic process where ProcessId=5678 call setpriority 0", check=True
+            'powershell -Command "(Get-Process -Id 5678).PriorityClass = '
+            '[System.Diagnostics.ProcessPriorityClass]::Idle"',
+            check=True,
         )
 
     def test_set_process_priority_invalid_class(self):
@@ -138,7 +142,7 @@ class TestProcessFunctions(unittest.TestCase):
         with self.assertRaises(ValueError):
             set_process_priority(1234, -1)
         with self.assertRaises(ValueError):
-            set_process_priority(1234, 5)
+            set_process_priority(1234, 6)
 
 
 class TestSystemInfo(unittest.TestCase):

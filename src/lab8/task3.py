@@ -91,13 +91,25 @@ def kill_process(pid: int) -> None:
 
 
 def set_process_priority(pid: int, priority_class: int) -> None:
-    """Устанавливает приоритет процесса (класс 0–4)."""
-    if priority_class < 0 or priority_class > 4:
-        raise ValueError("Приоритет должен быть от 0 до 4")
-    _run_cmd(
-        f"wmic process where ProcessId={pid} call setpriority {priority_class}",
-        check=True,
+    """Устанавливает класс приоритета процесса (0–5) через PowerShell."""
+    if priority_class < 0 or priority_class > 5:
+        raise ValueError("Класс приоритета должен быть от 0 до 5")
+
+    class_map = {
+        0: "Idle",
+        1: "BelowNormal",
+        2: "Normal",
+        3: "AboveNormal",
+        4: "High",
+        5: "RealTime",
+    }
+    class_name = class_map[priority_class]
+    cmd = (
+        f'powershell -Command "'
+        f"(Get-Process -Id {pid}).PriorityClass = "
+        f'[System.Diagnostics.ProcessPriorityClass]::{class_name}"'
     )
+    _run_cmd(cmd, check=True)
 
 
 def _get_memory_info() -> Dict[str, Any]:
@@ -245,20 +257,20 @@ def _show_system_info_interactive() -> None:
 
     mem = info.get("memory", {})
     if mem:
-        total_gb = mem["total"] // (1024 ** 3)
-        avail_gb = mem["available"] // (1024 ** 3)
+        total_gb = mem["total"] // (1024**3)
+        avail_gb = mem["available"] // (1024**3)
         print(f"Память: всего {total_gb} ГБ, доступно {avail_gb} ГБ ({mem['percent']:.1f}%)")
 
     disk = info.get("disk", {})
     if disk:
-        total_gb = disk["total"] // (1024 ** 3)
-        free_gb = disk["free"] // (1024 ** 3)
+        total_gb = disk["total"] // (1024**3)
+        free_gb = disk["free"] // (1024**3)
         print(f"Диск: всего {total_gb} ГБ, свободно {free_gb} ГБ ({disk['percent']:.1f}%)")
 
     swap = info.get("swap", {})
     if swap:
-        used_gb = swap["used"] // (1024 ** 3)
-        total_gb = swap["total"] // (1024 ** 3)
+        used_gb = swap["used"] // (1024**3)
+        total_gb = swap["total"] // (1024**3)
         print(f"Swap: {used_gb} ГБ из {total_gb} ГБ ({swap['percent']:.1f}%)")
 
 
