@@ -148,15 +148,15 @@ class TestProcessFunctions(unittest.TestCase):
 class TestSystemInfo(unittest.TestCase):
     """Тесты для системной информации."""
 
+    @patch("src.lab8.task3._run_powershell")
     @patch("src.lab8.task3.platform.system")
-    @patch("src.lab8.task3._run_cmd")
-    def test_system_info(self, mock_run_cmd, mock_platform):
-        """Проверяем сбор информации через wmic (CSV)."""
+    def test_system_info(self, mock_platform, mock_run_powershell):
+        """Проверяем сбор информации через PowerShell."""
         mock_platform.return_value = "Windows"
-        mock_run_cmd.side_effect = [
-            '"TotalVisibleMemorySize","FreePhysicalMemory"\n"8388608","4194304"',
-            '"Size","FreeSpace"\n"107374182400","53687091200"',
-            '"AllocatedBaseSize","CurrentUsage"\n"4096","2048"',
+        mock_run_powershell.side_effect = [
+            "TotalVisibleMemorySize : 8388608\nFreePhysicalMemory : 4194304",
+            "Size Free\n---- ----\n107374182400 53687091200",
+            "AllocatedBaseSize : 4096\nCurrentUsage : 2048",
         ]
         info = system_info()
         self.assertEqual(info["system"], "Windows")
@@ -173,22 +173,22 @@ class TestSystemInfo(unittest.TestCase):
         self.assertEqual(info["swap"]["used"], 2048 * 1024 * 1024)
         self.assertAlmostEqual(info["swap"]["percent"], 50.0, places=1)
 
-    @patch("src.lab8.task3._run_cmd")
-    def test_system_info_partial_data(self, mock_run_cmd):
+    @patch("src.lab8.task3._run_powershell")
+    def test_system_info_partial_data(self, mock_run_powershell):
         """Проверяем поведение при отсутствии части данных."""
-        mock_run_cmd.side_effect = ["", "", ""]
+        mock_run_powershell.side_effect = ["", "", ""]
         info = system_info()
         self.assertEqual(info["memory"], {})
         self.assertEqual(info["disk"], {})
         self.assertEqual(info["swap"], {})
 
-    @patch("src.lab8.task3._run_cmd")
-    def test_system_info_invalid_numbers(self, mock_run_cmd):
+    @patch("src.lab8.task3._run_powershell")
+    def test_system_info_invalid_numbers(self, mock_run_powershell):
         """Проверяем, что некорректные числа не ломают код."""
-        mock_run_cmd.side_effect = [
-            '"TotalVisibleMemorySize","FreePhysicalMemory"\n"abc","def"',
-            '"Size","FreeSpace"\n"xyz","uvw"',
-            '"AllocatedBaseSize","CurrentUsage"\n"",""',
+        mock_run_powershell.side_effect = [
+            "TotalVisibleMemorySize : abc\nFreePhysicalMemory : def",
+            "Size Free\n---- ----\nxyz uvw",
+            "AllocatedBaseSize : \nCurrentUsage : ",
         ]
         info = system_info()
         self.assertEqual(info["memory"], {})

@@ -30,6 +30,21 @@ def _run_cmd(cmd: str, check: bool = False) -> str:
         return ""
 
 
+def _run_powershell(cmd: str) -> str:
+    """Выполняет команду PowerShell и возвращает stdout."""
+    try:
+        result = subprocess.run(
+            ["powershell", "-Command", cmd],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+        return result.stdout.strip()
+    except (OSError, ValueError):
+        return ""
+
+
 def list_processes() -> List[Tuple[int, str]]:
     """Возвращает список кортежей (PID, имя_процесса)."""
     output = _run_cmd("tasklist /FO CSV /NH")
@@ -113,36 +128,58 @@ def set_process_priority(pid: int, priority_class: int) -> None:
 
 
 def _get_memory_info() -> Dict[str, Any]:
-    """Возвращает информацию о физической памяти."""
-    output = _run_cmd("wmic os get TotalVisibleMemorySize,FreePhysicalMemory /FORMAT:CSV")
+    """Возвращает информацию о физической памяти через PowerShell."""
+    cmd = (
+        "Get-CimInstance Win32_OperatingSystem | "
+        "Format-List TotalVisibleMemorySize,FreePhysicalMemory"
+    )
+    output = _run_powershell(cmd)
     if output:
-        lines = output.splitlines()
-        if len(lines) >= 2:
-            parts = lines[1].strip('"').split('","')
-            if len(parts) >= 2:
-                total_kb = int(parts[0]) if parts[0].isdigit() else 0
-                free_kb = int(parts[1]) if parts[1].isdigit() else 0
-                if total_kb:
-                    return {
-                        "total": total_kb * 1024,
-                        "available": free_kb * 1024,
-                        "percent": 100 - (free_kb / total_kb * 100),
-                    }
+        total_kb = 0
+        free_kb = 0
+        for line in output.splitlines():
+            line = line.strip()
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key = key.strip()
+                value = value.strip().replace(",", "")
+                if key == "TotalVisibleMemorySize":
+                    total_kb = int(value) if value.isdigit() else 0
+                elif key == "FreePhysicalMemory":
+                    free_kb = int(value) if value.isdigit() else 0
+        if total_kb and free_kb:
+            return {
+                "total": total_kb * 1024,
+                "available": free_kb * 1024,
+                "percent": 100 - (free_kb / total_kb * 100),
+            }
     return {}
 
 
 def _get_disk_info() -> Dict[str, Any]:
-    """Возвращает информацию о диске, на котором находится скрипт."""
-    drive = os.path.splitdrive(os.path.abspath(__file__))[0] + "\\"
-    cmd = f"wmic logicaldisk where DeviceID='{drive}' get Size,FreeSpace /FORMAT:CSV"
-    output = _run_cmd(cmd)
+    """Возвращает информацию о диске (PowerShell)."""
+    drive = os.path.splitdrive(os.path.abspath(__file__))[0]
+    drive_letter = drive.rstrip(":")
+    cmd = (
+        f"Get-PSDrive -Name {drive_letter} | "
+        f'Select-Object @{{N="Size";E={{$_.Used + $_.Free}}}},Free'
+    )
+    output = _run_powershell(cmd)
     if output:
-        lines = output.splitlines()
-        if len(lines) >= 2:
-            parts = lines[1].strip('"').split('","')
-            if len(parts) >= 2:
-                total = int(parts[0]) if parts[0].isdigit() else 0
-                free = int(parts[1]) if parts[1].isdigit() else 0
+        for line in output.splitlines():
+            line = line.strip()
+            if not line or "Size" in line or "Free" in line or "---" in line:
+                continue
+            parts = line.split()
+            nums = []
+            for p in parts:
+                try:
+                    nums.append(int(p.replace(",", "")))
+                except ValueError:
+                    pass
+            if len(nums) >= 2:
+                total = nums[0]
+                free = nums[1]
                 if total:
                     return {
                         "total": total,
@@ -153,21 +190,28 @@ def _get_disk_info() -> Dict[str, Any]:
 
 
 def _get_swap_info() -> Dict[str, Any]:
-    """Возвращает информацию о файле подкачки."""
-    output = _run_cmd("wmic pagefile get AllocatedBaseSize,CurrentUsage /FORMAT:CSV")
+    """Возвращает информацию о файле подкачки через PowerShell."""
+    cmd = "Get-CimInstance Win32_PageFileUsage | Format-List AllocatedBaseSize,CurrentUsage"
+    output = _run_powershell(cmd)
     if output:
-        lines = output.splitlines()
-        if len(lines) >= 2:
-            parts = lines[1].strip('"').split('","')
-            if len(parts) >= 2:
-                total_mb = int(parts[0]) if parts[0].isdigit() else 0
-                used_mb = int(parts[1]) if parts[1].isdigit() else 0
-                if total_mb:
-                    return {
-                        "total": total_mb * 1024 * 1024,
-                        "used": used_mb * 1024 * 1024,
-                        "percent": (used_mb / total_mb) * 100,
-                    }
+        total_mb = 0
+        used_mb = 0
+        for line in output.splitlines():
+            line = line.strip()
+            if ":" in line:
+                key, value = line.split(":", 1)
+                key = key.strip()
+                value = value.strip().replace(",", "")
+                if key == "AllocatedBaseSize":
+                    total_mb = int(value) if value.isdigit() else 0
+                elif key == "CurrentUsage":
+                    used_mb = int(value) if value.isdigit() else 0
+        if total_mb and used_mb:
+            return {
+                "total": total_mb * 1024 * 1024,
+                "used": used_mb * 1024 * 1024,
+                "percent": (used_mb / total_mb) * 100,
+            }
     return {}
 
 
