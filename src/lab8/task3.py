@@ -90,18 +90,12 @@ def kill_process(pid: int) -> None:
     _run_cmd(f"taskkill /PID {pid} /F", check=True)
 
 
-def set_process_priority(pid: int, priority: int) -> None:
-    """Устанавливает приоритет процесса по значению nice (-20..19)."""
-    if priority <= -5:
-        win_priority = 0
-    elif priority <= 5:
-        win_priority = 2
-    elif priority <= 15:
-        win_priority = 3
-    else:
-        win_priority = 4
+def set_process_priority(pid: int, priority_class: int) -> None:
+    """Устанавливает приоритет процесса (класс 0–4)."""
+    if priority_class < 0 or priority_class > 4:
+        raise ValueError("Приоритет должен быть от 0 до 4")
     _run_cmd(
-        f"wmic process where ProcessId={pid} call setpriority {win_priority}",
+        f"wmic process where ProcessId={pid} call setpriority {priority_class}",
         check=True,
     )
 
@@ -210,14 +204,21 @@ def _kill_process_interactive() -> None:
 
 
 def _set_priority_interactive() -> None:
-    """Запрашивает PID и значение nice, устанавливает приоритет."""
+    """Запрашивает PID и класс приоритета (0–4)."""
     try:
         pid = int(input("PID: "))
-        priority = int(input("nice (-20..19): "))
-        set_process_priority(pid, priority)
+        print("Классы приоритета:")
+        print("0 – IDLE")
+        print("1 – BELOW NORMAL")
+        print("2 – NORMAL")
+        print("3 – ABOVE NORMAL")
+        print("4 – HIGH")
+        print("5 – REALTIME (требует прав администратора)")
+        priority_class = int(input("Класс (0–5): "))
+        set_process_priority(pid, priority_class)
         print(f"Приоритет {pid} изменён.")
-    except ValueError:
-        print("Ошибка ввода.")
+    except ValueError as e:
+        print(f"Ошибка ввода: {e}")
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"Ошибка: {e}")
 
@@ -244,20 +245,20 @@ def _show_system_info_interactive() -> None:
 
     mem = info.get("memory", {})
     if mem:
-        total_gb = mem["total"] // (1024**3)
-        avail_gb = mem["available"] // (1024**3)
+        total_gb = mem["total"] // (1024 ** 3)
+        avail_gb = mem["available"] // (1024 ** 3)
         print(f"Память: всего {total_gb} ГБ, доступно {avail_gb} ГБ ({mem['percent']:.1f}%)")
 
     disk = info.get("disk", {})
     if disk:
-        total_gb = disk["total"] // (1024**3)
-        free_gb = disk["free"] // (1024**3)
+        total_gb = disk["total"] // (1024 ** 3)
+        free_gb = disk["free"] // (1024 ** 3)
         print(f"Диск: всего {total_gb} ГБ, свободно {free_gb} ГБ ({disk['percent']:.1f}%)")
 
     swap = info.get("swap", {})
     if swap:
-        used_gb = swap["used"] // (1024**3)
-        total_gb = swap["total"] // (1024**3)
+        used_gb = swap["used"] // (1024 ** 3)
+        total_gb = swap["total"] // (1024 ** 3)
         print(f"Swap: {used_gb} ГБ из {total_gb} ГБ ({swap['percent']:.1f}%)")
 
 

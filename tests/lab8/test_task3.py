@@ -38,7 +38,7 @@ class TestChangeDirectory(unittest.TestCase):
     @patch("src.lab8.task3.os.path.abspath")
     @patch("src.lab8.task3.__file__", "C:\\same\\task3.py")
     def test_change_to_script_directory_already_there(
-        self, mock_abspath, mock_dirname, mock_chdir, mock_getcwd
+            self, mock_abspath, mock_dirname, mock_chdir, mock_getcwd
     ):
         """Если уже в нужной директории, переход не происходит."""
         mock_abspath.return_value = "C:\\same\\task3.py"
@@ -122,28 +122,24 @@ class TestProcessFunctions(unittest.TestCase):
         mock_run_cmd.assert_called_once_with("taskkill /PID 1234 /F", check=True)
 
     @patch("src.lab8.task3._run_cmd")
-    def test_set_process_priority_normal(self, mock_run_cmd):
-        """Проверяем преобразование nice -> приоритет Windows (нормальный)."""
-        set_process_priority(1234, 0)
+    def test_set_process_priority_valid_class(self, mock_run_cmd):
+        """Проверяем вызов с корректным классом приоритета (0-4)."""
+        set_process_priority(1234, 2)
         mock_run_cmd.assert_called_once_with(
             "wmic process where ProcessId=1234 call setpriority 2", check=True
         )
-
-    @patch("src.lab8.task3._run_cmd")
-    def test_set_process_priority_high(self, mock_run_cmd):
-        """Проверяем высокий приоритет (nice <= -5)."""
-        set_process_priority(1234, -10)
-        mock_run_cmd.assert_called_once_with(
-            "wmic process where ProcessId=1234 call setpriority 0", check=True
+        # Проверяем другой класс
+        set_process_priority(5678, 0)
+        mock_run_cmd.assert_called_with(
+            "wmic process where ProcessId=5678 call setpriority 0", check=True
         )
 
-    @patch("src.lab8.task3._run_cmd")
-    def test_set_process_priority_low(self, mock_run_cmd):
-        """Проверяем низкий приоритет (nice > 15)."""
-        set_process_priority(1234, 18)
-        mock_run_cmd.assert_called_once_with(
-            "wmic process where ProcessId=1234 call setpriority 4", check=True
-        )
+    def test_set_process_priority_invalid_class(self):
+        """Проверяем, что выбрасывается ValueError при недопустимом классе."""
+        with self.assertRaises(ValueError):
+            set_process_priority(1234, -1)
+        with self.assertRaises(ValueError):
+            set_process_priority(1234, 5)
 
 
 class TestSystemInfo(unittest.TestCase):
