@@ -37,10 +37,7 @@ def copy_file(src: str, dst: str) -> bool:
 
 
 def move_and_rename_file(src: str, dst_dir: str, new_name: str) -> bool:
-    """
-    Перемещает файл в директорию dst_dir и переименовывает его в new_name.
-    Создаёт промежуточные директории при необходимости.
-    """
+    """Перемещает файл в директорию dst_dir и переименовывает его в new_name."""
     try:
         os.makedirs(dst_dir, exist_ok=True)
         dst_path = os.path.join(dst_dir, new_name)
@@ -103,10 +100,7 @@ def manage_empty_dir(dirname: str) -> None:
 
 
 def create_nested_dirs_with_files(base_path: str, file_pairs: List[Tuple[str, str]]) -> None:
-    """
-    Создаёт вложенные директории и файлы.
-    file_pairs: список кортежей (относительный_путь_к_файлу, содержимое)
-    """
+    """Создаёт вложенные директории и файлы."""
     try:
         os.makedirs(base_path, exist_ok=True)
         for rel_path, content in file_pairs:
