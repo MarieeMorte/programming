@@ -1,4 +1,4 @@
-"""Unit-тесты для задания 2."""
+"""Unit-тесты для задания 2 (модульная структура)."""
 
 import os
 import shutil
@@ -6,96 +6,259 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from src.lab8.task2 import main
+from src.lab8.task2 import (
+    change_to_script_directory,
+    copy_file,
+    create_and_move_file,
+    create_extra_files,
+    create_nested_dirs_with_files,
+    ensure_original_file,
+    main,
+    manage_empty_dir,
+    move_and_rename_file,
+    print_directory_contents,
+    walk_and_print,
+)
 
 
-class TestDirectories(unittest.TestCase):
-    """Тесты для скрипта task2.py с изоляцией через моки."""
+# pylint: disable=too-many-public-methods
+class TestTask2Functions(unittest.TestCase):
+    """Тесты для отдельных функций task2.py."""
 
     def setUp(self):
-        """Создаём временную папку и подменяем __file__, чтобы main работал в ней."""
+        """Создаём временную директорию и исходный файл."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_dir = os.getcwd()
-        # Патчим __file__ в модуле task2, чтобы main считал, что он лежит в temp_dir
-        self.patcher = patch("src.lab8.task2.__file__", os.path.join(self.temp_dir, "task2.py"))
-        self.mock_file = self.patcher.start()
+        os.chdir(self.temp_dir)
+        self.original_file = os.path.join(self.temp_dir, "lab_os_file.txt")
+        with open(self.original_file, "w", encoding="utf-8") as f:
+            f.write("Original content for tests\n")
+        self.dst_file = os.path.join(self.temp_dir, "copy.txt")
 
     def tearDown(self):
-        """Останавливаем патч, возвращаемся в исходную директорию и удаляем временную папку."""
-        self.patcher.stop()
+        """Возвращаемся в исходную директорию и удаляем временную."""
         os.chdir(self.original_dir)
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    def test_copy_exists(self):
-        """Проверяет, что исходный файл и его перемещённая копия существуют."""
-        main()
-        original = os.path.join(self.temp_dir, "lab_os_file.txt")
-        moved_copy = os.path.join(self.temp_dir, "dir1", "dir2", "moved_copy.txt")
-        self.assertTrue(os.path.exists(original))
-        self.assertTrue(os.path.exists(moved_copy))
+    def test_change_to_script_directory(self):
+        """Переход в директорию скрипта."""
+        with patch("src.lab8.task2.__file__", os.path.join(self.temp_dir, "task2.py")):
+            script_dir = change_to_script_directory()
+            self.assertEqual(script_dir, self.temp_dir)
+            self.assertEqual(os.getcwd(), self.temp_dir)
 
-    def test_move_and_rename_copy(self):
-        """Проверяет, что копия перемещена в нужную папку и переименована."""
-        main()
+    def test_change_to_script_directory_already_there(self):
+        """Если уже в нужной директории, переход не происходит."""
+        os.chdir(self.temp_dir)
+        with patch("src.lab8.task2.__file__", os.path.join(self.temp_dir, "task2.py")):
+            script_dir = change_to_script_directory()
+            self.assertEqual(script_dir, self.temp_dir)
+            self.assertEqual(os.getcwd(), self.temp_dir)
+
+    def test_ensure_original_file_creates_if_missing(self):
+        """Если файла нет, он создаётся."""
+        os.remove(self.original_file)
+        filename = ensure_original_file("lab_os_file.txt")
+        self.assertEqual(filename, "lab_os_file.txt")
+        self.assertTrue(os.path.exists(self.original_file))
+        with open(self.original_file, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertIn("Исходный файл для задания 2", content)
+
+    def test_ensure_original_file_does_not_overwrite(self):
+        """Если файл уже есть, он не перезаписывается."""
+        with open(self.original_file, "r", encoding="utf-8") as f:
+            original_content = f.read()
+        ensure_original_file("lab_os_file.txt")
+        with open(self.original_file, "r", encoding="utf-8") as f:
+            new_content = f.read()
+        self.assertEqual(original_content, new_content)
+
+    def test_copy_file_success(self):
+        """Успешное копирование файла."""
+        result = copy_file(self.original_file, self.dst_file)
+        self.assertTrue(result)
+        self.assertTrue(os.path.exists(self.dst_file))
+        with open(self.dst_file, "rb") as f:
+            copied_data = f.read()
+        with open(self.original_file, "rb") as f:
+            original_data = f.read()
+        self.assertEqual(copied_data, original_data)
+
+    def test_copy_file_failure(self):
+        """Ошибка при копировании (например, исходный файл не существует)."""
+        with patch("builtins.print") as mock_print:
+            result = copy_file("nonexistent.txt", self.dst_file)
+            self.assertFalse(result)
+            mock_print.assert_called_once()
+            self.assertIn("Ошибка копирования", mock_print.call_args[0][0])
+
+    def test_move_and_rename_file_success(self):
+        """Перемещение и переименование с созданием папок."""
+        src = self.original_file
+        dst_dir = os.path.join("sub", "dir")
+        new_name = "moved.txt"
+        result = move_and_rename_file(src, dst_dir, new_name)
+        self.assertTrue(result)
+        expected_path = os.path.join(self.temp_dir, dst_dir, new_name)
+        self.assertTrue(os.path.exists(expected_path))
+        self.assertFalse(os.path.exists(src))
+        with open(expected_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertEqual(content, "Original content for tests\n")
+
+    def test_move_and_rename_file_failure(self):
+        """Ошибка при перемещении (например, исходный файл не существует)."""
+        with patch("builtins.print") as mock_print:
+            result = move_and_rename_file("nonexistent.txt", "sub", "new.txt")
+            self.assertFalse(result)
+            mock_print.assert_called_once()
+            self.assertIn("Ошибка перемещения", mock_print.call_args[0][0])
+
+    def test_create_and_move_file_success(self):
+        """Создание файла и перемещение/переименование одной командой."""
+        content = "Test content"
+        src_name = "temp.txt"
+        dst_dir = os.path.join("sub", "dir2")
+        new_name = "final.txt"
+        result = create_and_move_file(content, src_name, dst_dir, new_name)
+        self.assertTrue(result)
+        expected_path = os.path.join(self.temp_dir, dst_dir, new_name)
+        self.assertTrue(os.path.exists(expected_path))
+        self.assertFalse(os.path.exists(os.path.join(self.temp_dir, src_name)))
+        with open(expected_path, "r", encoding="utf-8") as f:
+            self.assertEqual(f.read(), content)
+
+    def test_create_and_move_file_failure(self):
+        """Ошибка при создании или перемещении."""
+        with patch("os.rename", side_effect=OSError("Permission denied")):
+            with patch("builtins.print") as mock_print:
+                result = create_and_move_file("content", "src.txt", "dst", "new.txt")
+                self.assertFalse(result)
+                mock_print.assert_called_once()
+                self.assertIn("Ошибка при создании/перемещении", mock_print.call_args[0][0])
+
+    def test_create_extra_files(self):
+        """Создание нескольких файлов."""
+        filenames = ["a.txt", "b.txt"]
+        create_extra_files(filenames)
+        for name in filenames:
+            path = os.path.join(self.temp_dir, name)
+            self.assertTrue(os.path.exists(path))
+            with open(path, "r", encoding="utf-8") as f:
+                self.assertEqual(f.read().strip(), f"Файл {name}")
+
+    def test_create_extra_files_error(self):
+        """Ошибка при создании файла (например, некорректное имя)."""
+        with patch("builtins.open", side_effect=OSError("Invalid name")):
+            with patch("builtins.print") as mock_print:
+                create_extra_files(["bad:name.txt"])
+                mock_print.assert_called_once()
+                self.assertIn("Не удалось создать", mock_print.call_args[0][0])
+
+    def test_print_directory_contents(self):
+        """Вывод содержимого директории."""
+        os.makedirs("subdir")
+        with open("file1.txt", "w", encoding="utf-8") as f:
+            f.write("data")
+        with open("file2.txt", "w", encoding="utf-8") as f:
+            f.write("data")
+        with patch("builtins.print") as mock_print:
+            print_directory_contents(".", "Label: ")
+            calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
+            self.assertTrue(any("Label: Содержимое ." in s for s in calls))
+            self.assertTrue(any("file1.txt" in s for s in calls))
+            self.assertTrue(any("file2.txt" in s for s in calls))
+            self.assertTrue(any("subdir" in s for s in calls))
+
+    def test_print_directory_contents_error(self):
+        """Ошибка при чтении директории."""
+        with patch("os.listdir", side_effect=PermissionError("Access denied")):
+            with patch("builtins.print") as mock_print:
+                print_directory_contents(".")
+                mock_print.assert_called_once()
+                self.assertIn("Не удалось прочитать", mock_print.call_args[0][0])
+
+    def test_manage_empty_dir_success(self):
+        """Создание и удаление пустой директории."""
+        dirname = "empty_test"
+        manage_empty_dir(dirname)
+        self.assertFalse(os.path.exists(os.path.join(self.temp_dir, dirname)))
+
+    def test_manage_empty_dir_failure(self):
+        """Ошибка при создании (например, уже существует)."""
+        dirname = "existing"
+        os.mkdir(dirname)
+        with patch("builtins.print") as mock_print:
+            manage_empty_dir(dirname)
+            mock_print.assert_called_once()
+            self.assertIn("Ошибка при работе с", mock_print.call_args[0][0])
+
+    def test_create_nested_dirs_with_files(self):
+        """Создание вложенных директорий и файлов."""
+        base = "nested"
+        file_pairs = [
+            ("fileA.txt", "Content A"),
+            (os.path.join("sub", "fileB.txt"), "Content B"),
+        ]
+        create_nested_dirs_with_files(base, file_pairs)
+        file_a = os.path.join(self.temp_dir, base, "fileA.txt")
+        file_b = os.path.join(self.temp_dir, base, "sub", "fileB.txt")
+        self.assertTrue(os.path.exists(file_a))
+        self.assertTrue(os.path.exists(file_b))
+        with open(file_a, "r", encoding="utf-8") as f:
+            self.assertEqual(f.read(), "Content A")
+        with open(file_b, "r", encoding="utf-8") as f:
+            self.assertEqual(f.read(), "Content B")
+
+    def test_create_nested_dirs_with_files_error(self):
+        """Ошибка при создании."""
+        with patch("os.makedirs", side_effect=OSError("Cannot create")):
+            with patch("builtins.print") as mock_print:
+                create_nested_dirs_with_files("base", [("a.txt", "data")])
+                mock_print.assert_called_once()
+                self.assertIn("Ошибка создания вложенных директорий", mock_print.call_args[0][0])
+
+    def test_walk_and_print(self):
+        """Обход дерева без ошибок."""
+        os.makedirs(os.path.join("a", "b"))
+        with open("root.txt", "w", encoding="utf-8") as f:
+            f.write("")
+        with open(os.path.join("a", "a.txt"), "w", encoding="utf-8") as f:
+            f.write("")
+        with patch("builtins.print") as mock_print:
+            walk_and_print()
+            calls = [call[0][0] for call in mock_print.call_args_list if call[0]]
+            self.assertTrue(any("Папка: ." in s for s in calls))
+            self.assertTrue(any("Файлы: root.txt" in s for s in calls))
+            self.assertTrue(any("Папка: .\\a" in s or "Папка: ./a" in s for s in calls))
+            self.assertTrue(any("Файлы: a.txt" in s for s in calls))
+
+    def test_walk_and_print_error(self):
+        """Ошибка при обходе."""
+        with patch("os.walk", side_effect=OSError("Access denied")):
+            with patch("builtins.print") as mock_print:
+                walk_and_print()
+                mock_print.assert_called_once()
+                self.assertIn("Ошибка при обходе дерева", mock_print.call_args[0][0])
+
+    def test_main_integration(self):
+        """Полный прогон main во временной директории."""
+        with patch("src.lab8.task2.__file__", os.path.join(self.temp_dir, "task2.py")):
+            with patch("builtins.print"):
+                main()
+        self.assertTrue(os.path.exists(self.original_file))
         moved_copy = os.path.join(self.temp_dir, "dir1", "dir2", "moved_copy.txt")
         self.assertTrue(os.path.exists(moved_copy))
-        self.assertEqual(os.path.basename(moved_copy), "moved_copy.txt")
-        self.assertEqual(os.path.dirname(moved_copy), os.path.join(self.temp_dir, "dir1", "dir2"))
-
-    def test_move_and_rename_new_file(self):
-        """Проверяет, что новый файл перемещён и переименован одной командой os.rename."""
-        main()
         renamed_new = os.path.join(self.temp_dir, "dir1", "dir2", "renamed_new.txt")
         self.assertTrue(os.path.exists(renamed_new))
-        self.assertEqual(os.path.basename(renamed_new), "renamed_new.txt")
-        self.assertEqual(os.path.dirname(renamed_new), os.path.join(self.temp_dir, "dir1", "dir2"))
-        # Проверяем, что исходный файл new_file.txt не остался в корне
-        self.assertFalse(os.path.exists(os.path.join(self.temp_dir, "new_file.txt")))
-
-    def test_extra_files_created(self):
-        """Проверяет, что дополнительные файлы созданы в корневой папке."""
-        main()
-        extra1 = os.path.join(self.temp_dir, "extra1.txt")
-        extra2 = os.path.join(self.temp_dir, "extra2.txt")
-        self.assertTrue(os.path.exists(extra1))
-        self.assertTrue(os.path.exists(extra2))
-        # Проверяем содержимое (необязательно, но можно)
-        with open(extra1, "r", encoding="utf-8") as f:
-            self.assertEqual(f.read().strip(), "Файл extra1.txt")
-        with open(extra2, "r", encoding="utf-8") as f:
-            self.assertEqual(f.read().strip(), "Файл extra2.txt")
-
-    def test_empty_dir_created_and_deleted(self):
-        """Проверяет, что пустая директория была создана и удалена."""
-        main()
-        empty_dir = os.path.join(self.temp_dir, "empty_dir")
-        self.assertFalse(os.path.exists(empty_dir))
-
-    def test_nested_dirs_and_files(self):
-        """Проверяет создание вложенных директорий nested1/nested2 и файлов в них."""
-        main()
-        deep_dir = os.path.join(self.temp_dir, "nested1", "nested2")
-        deep_file = os.path.join(deep_dir, "fileB.txt")
-        shallow_file = os.path.join(self.temp_dir, "nested1", "fileA.txt")
-        self.assertTrue(os.path.exists(deep_dir))
-        self.assertTrue(os.path.exists(deep_file))
-        self.assertTrue(os.path.exists(shallow_file))
-        # Проверяем содержимое
-        with open(deep_file, "r", encoding="utf-8") as f:
-            self.assertEqual(f.read().strip(), "Файл в глубокой вложенности.")
-        with open(shallow_file, "r", encoding="utf-8") as f:
-            self.assertEqual(f.read().strip(), "Файл в первой вложенной папке.")
-
-    def test_walk_contains_all(self):
-        """Проверяет, что обход дерева выполняется без ошибок."""
-        try:
-            main()
-        except Exception as e:
-            self.fail(f"main() raised an exception: {e}")
-
-    def test_working_directory_changes(self):
-        """Проверяет, что после всех операций мы вернулись в корневую папку."""
-        main()
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, "extra1.txt")))
+        self.assertTrue(os.path.exists(os.path.join(self.temp_dir, "extra2.txt")))
+        self.assertFalse(os.path.exists(os.path.join(self.temp_dir, "empty_dir")))
+        file_a = os.path.join(self.temp_dir, "nested1", "fileA.txt")
+        file_b = os.path.join(self.temp_dir, "nested1", "nested2", "fileB.txt")
+        self.assertTrue(os.path.exists(file_a))
+        self.assertTrue(os.path.exists(file_b))
         self.assertEqual(os.getcwd(), self.temp_dir)
 
 
