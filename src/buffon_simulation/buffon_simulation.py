@@ -4,8 +4,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.animation import FuncAnimation
 
 
-def animate_buffon_full(l=0.8, d=1.0, n_total=500, fps=20,
-                        save_path=None, seed=42):
+def animate_buffon_full(l=0.8, d=1.0, n_total=500, fps=20, save_path=None, seed=None):
     rng = np.random.default_rng(seed)
 
     x_all = rng.uniform(low=0.0, high=float(d) / 2.0, size=int(n_total))
